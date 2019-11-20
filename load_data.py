@@ -11,6 +11,7 @@ items_stock = pd.read_excel(file_name, sheet_name='items_stock')
 participants = pd.read_excel(file_name, sheet_name='participants')
 sorts = pd.read_excel(file_name, sheet_name='sorts')
 
+# number of common items and number of basket labels
 baskets_ids = baskets_categories['bc_id']
 common_items_ids = items[items['i_stock_personal'] == 'stock']['i_id']
 baskets_num = baskets_ids.shape[0]
@@ -20,26 +21,37 @@ columns_names = ['basket' + str(id) for id in list(baskets_ids)]
 index_names = ['item' + str(id) for id in list(common_items_ids)]
 
 # calculate the distrubution
-distribution = pd.DataFrame(np.zeros((common_items_num, baskets_num)), index=index_names, columns=columns_names)
+common_distribution = pd.DataFrame(np.zeros((common_items_num, baskets_num)), index=index_names, columns=columns_names)
 
 # for i in range(common_items_num):
 #     items = sorts[sorts['i_id'] == str(i + 1)]
 #     for row in items.iterrows():
 #         print(row[1]['b_id'])
 
-print(set(sorts['b_id_alt']))
+count = 0
 for row in sorts.iterrows():
-    i_id = int(row[1]['i_id'])
-    # TODO link b_id to bc_id
-    b_id = int(row[1]['b_id'])
-    b_id_alt = int(row[1]['b_id_alt'])
+    row = row[1]
+    if (not str.isdigit(str(row['i_id']))) or (not str.isdigit(str(row['b_id']))) or (
+    not str.isdigit(str(row['b_id_alt']))):
+        print(row)
+        continue
+
+    i_id = int(row['i_id'])
+    b_id = row['b_id']
+    b_id_alt = row['b_id_alt']
+
     if i_id > common_items_num:
         continue
-    print(i_id)
-    print(b_id)
-    distribution.iloc[i_id - 1, b_id] += 1
-    distribution.iloc[i_id - 1, b_id_alt] += 1
 
-print(distribution)
+    baskets_row = baskets[baskets['b_id'] == b_id]
+    bc_id_1 = baskets_row['bc_id_1']
+    bc_id_2 = baskets_row['bc_id_2']
+
+    common_distribution.iloc[i_id - 1, bc_id_1] += 1
+    common_distribution.iloc[i_id - 1, bc_id_2] += 1
+    count += 1
+
+print(count == 16 * 30 - 1)  # check the all items have been counted
+print(common_distribution)
 
 
