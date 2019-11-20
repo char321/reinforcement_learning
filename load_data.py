@@ -20,7 +20,7 @@ common_items_num = common_items_ids.shape[0]
 columns_names = ['basket' + str(id) for id in list(baskets_ids)]
 index_names = ['item' + str(id) for id in list(common_items_ids)]
 
-# calculate the distrubution
+# calculate the common items distribution
 common_distribution = pd.DataFrame(np.zeros((common_items_num, baskets_num)), index=index_names, columns=columns_names)
 
 # for i in range(common_items_num):
@@ -32,7 +32,7 @@ count = 0
 for row in sorts.iterrows():
     row = row[1]
     if (not str.isdigit(str(row['i_id']))) or (not str.isdigit(str(row['b_id']))) or (
-    not str.isdigit(str(row['b_id_alt']))):
+            not str.isdigit(str(row['b_id_alt']))):
         print(row)
         continue
 
@@ -54,4 +54,11 @@ for row in sorts.iterrows():
 print(count == 16 * 30 - 1)  # check the all items have been counted
 print(common_distribution)
 
+## TODO
+# Choose basket label
+# - majority
+# - which label cover wider range
+# - which is more replaceable
+# - may assist with graph (data visualization)
 
+# Extend to all the items
