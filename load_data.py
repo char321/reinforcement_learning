@@ -60,16 +60,27 @@ csv_filename = "first_choice_distribution.csv"
 total_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 ## extract the common combination of the labels
-dict = {}
+dict_bc_id = {}
+dict_bc_label = {}
 for row in baskets.iterrows():
     row = row[1]
     bc_id_1 = int(row['bc_id_1'])
     bc_id_2 = int(row['bc_id_2'])
-    if bc_id_2 != 0:
-        key = str(bc_id_1) + '-' + str(bc_id_2) if bc_id_1 < bc_id_2 else str(bc_id_2) + '-' + str(bc_id_1)
-        dict[key] = dict[key] + 1 if key in dict else 1
 
-print(sorted(dict.items(), key=lambda d: d[1], reverse=True))
+    if bc_id_2 != 0:
+        label_1 = baskets_categories.iloc[bc_id_1]['bc_label']
+        label_2 = baskets_categories.iloc[bc_id_2]['bc_label']
+
+        key_id = str(bc_id_1) + '-' + str(bc_id_2) if bc_id_1 < bc_id_2 else str(bc_id_2) + '-' + str(bc_id_1)
+        dict_bc_id[key_id] = dict_bc_id[key_id] + 1 if key_id in dict_bc_id else 1
+
+        key_label = label_1 + '-' + label_2 if bc_id_1 < bc_id_2 else label_2 + '-' + label_1
+        dict_bc_label[key_label] = dict_bc_label[key_label] + 1 if key_label in dict_bc_label else 1
+
+print(sorted(dict_bc_id.items(), key=lambda d: d[1], reverse=True))
+print(sorted(dict_bc_label.items(), key=lambda d: d[1], reverse=True))
+
+
 # 1+2: white and light: most common combination
 # 3+5, 3+7, 3+9, 3+10, 3+11: colour + description
 # 2+8, 2+9, 2+10: colour + description
@@ -77,19 +88,12 @@ print(sorted(dict.items(), key=lambda d: d[1], reverse=True))
 # 7+9, 6+7, 6+8, 5+10: description + description
 # Consider replaceable of the baskets
 # 2, 3 are more common to combined with other label
-# choose 1, 3, 5
+# choose 1, 3, 5 # - more replaceable
 # 5: majority + wider range
 # 1: 1 and 2 is similar, but 1 is more specific
 # 3: majority + wider range
 # overall: based on colour, can cover most clothes, easy to extend: add new basket with specific purpose such as mix, children
+# show in tables # - may assist with graph (data visualization)
+# calculate the proportion # - algorithm to choose the labels? -- 量化
 
-## TODO
-# Choose basket label
-# - majority
-# - which label cover wider range
-# - which is more replaceable
-# - may assist with graph (data visualization)
-# - decision tree?
-# - algorithm to devide? -- 量化
-
-# Extend to all the items
+# Error in data
