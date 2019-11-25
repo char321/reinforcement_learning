@@ -19,11 +19,13 @@ common_items_ids = items[items['i_stock_personal'] == 'stock']['i_id']
 baskets_num = baskets_ids.shape[0]
 common_items_num = common_items_ids.shape[0]
 
+participants_num = 30
 items_num = 21
 columns_names = ['basket' + str(id) for id in list(baskets_ids)]
-index_names = ['common_item' + str(id) for id in list(common_items_ids)]
-index_names += ['personal_item' + str(id) for id in list(range(1, items_num - common_items_num + 1))]
-total_distribution = pd.DataFrame(np.zeros((items_num, baskets_num)), index=index_names, columns=columns_names)
+index_names = ['stock' + str(id) for id in list(common_items_ids)]
+stock_distribution = pd.DataFrame(np.zeros((common_items_num, baskets_num)), index=index_names, columns=columns_names)
+index_names += ['personal' + str(id) for id in list(range(1, items_num - common_items_num + 1))]
+distribution = pd.DataFrame(np.zeros((items_num, baskets_num)), index=index_names, columns=columns_names)
 
 count = 0
 for row in sorts.iterrows():
@@ -43,21 +45,28 @@ for row in sorts.iterrows():
 
     if i_id > common_items_num:
         personal_i_id = (i_id - 1 - common_items_num) % (items_num - common_items_num) # (i_id - 17) / 5
-        total_distribution.iloc[personal_i_id + common_items_num, bc_id_1] += 1
-        # total_distribution.iloc[personal_i_id + common_items_num, bc_id_2] += 1
+        distribution.iloc[personal_i_id + common_items_num, bc_id_1] += 1
+        # distribution.iloc[personal_i_id + common_items_num, bc_id_2] += 1
     else:
-        total_distribution.iloc[i_id - 1, bc_id_1] += 1
-        # total_distribution.iloc[i_id - 1, bc_id_2] += 1
+        distribution.iloc[i_id - 1, bc_id_1] += 1
+        stock_distribution.iloc[i_id - 1, bc_id_1] += 1
+        # distribution.iloc[i_id - 1, bc_id_2] += 1
     count += 1
 
 print(count == 30 * 5 + 16 * 30 - 1)
-print(total_distribution)
+stock_distribution = stock_distribution.drop(['basket0'], axis=1)
+distribution = distribution.drop(['basket0'], axis=1)
+# print(stock_distribution)
+
+stock_distribution.loc['mean'] = stock_distribution.mean(0).T
+stock_distribution['total'] = stock_distribution.sum(1).T
+print(stock_distribution)
 
 # csv_filename = "total_distribution.csv"
 # total_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 csv_filename = "first_choice_distribution.csv"
-total_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
+distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 ## extract the common combination of the labels
 dict_bc_id = {}
@@ -80,6 +89,39 @@ for row in baskets.iterrows():
 print(sorted(dict_bc_id.items(), key=lambda d: d[1], reverse=True))
 print(sorted(dict_bc_label.items(), key=lambda d: d[1], reverse=True))
 
+def get_user_dsitrubtion(label):
+    index_names = ['participant' + str(id) for id in range(1, participants_num + 1)]
+    columns_names = ['count', 'if_use']
+    user_distribution = pd.DataFrame(np.zeros((participants_num, 2)), index=index_names, columns=columns_names)
+    for row in sorts.iterrows():
+        row = row[1]
+        if (not str.isdigit(str(row['i_id']))) or (not str.isdigit(str(row['b_id']))) or (
+                not str.isdigit(str(row['b_id_alt']))):
+            continue
+
+        i_id = int(row['i_id'])
+        b_id = row['b_id']
+        p_id = row['p_id']
+
+        baskets_row = baskets[baskets['b_id'] == b_id]
+        bc_id_1 = baskets_row['bc_id_1']
+        bc_id_2 = baskets_row['bc_id_2']
+
+        if label == int(bc_id_1):
+            user_distribution.iloc[p_id - 1, 0] += 1
+            user_distribution.iloc[p_id - 1, 1] = 1
+        if label == int(bc_id_2):
+            user_distribution.iloc[p_id - 1, 0] += 1
+            user_distribution.iloc[p_id - 1, 1] = 1
+
+    user_distribution.loc['total'] = user_distribution.sum(0).T
+
+    return user_distribution
+
+user_distribution = get_user_dsitrubtion(1)
+print(user_distribution)
+user_distribution = get_user_dsitrubtion(2)
+print(user_distribution)
 
 # 1+2: white and light: most common combination
 # 3+5, 3+7, 3+9, 3+10, 3+11: colour + description
