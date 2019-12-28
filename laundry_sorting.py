@@ -1,68 +1,60 @@
 import pandas as pd
-import numpy as np
 import pprint
-import random
-
-# Initialise Q-table
-q = np.zeros((4, 5))
-
-# Create Reward table
-# state     | action put to another || continue || ask specific basket || ask new basket
-# correct   | -1                    || 1        || -1                  || -1
-# incorrect | 1                     || -1       || 1                   || 1
-
-# r = np.array([[-10, 10, -10, -10, -20], [10, -10, 5, 15, -20], [-5, -15, 20, -5, -20], [-10, -10, -10, -10, -20]])
+from models.QLearning import QLearning
 
 
-file_name = 'Database.xlsx'
+def load_data():
+    file_name = 'Database.xlsx'
 
-# read data
-baskets = pd.read_excel(file_name, sheet_name='baskets')
-baskets_categories = pd.read_excel(file_name, sheet_name='baskets_categories')
-items = pd.read_excel(file_name, sheet_name='items')
-items_stock = pd.read_excel(file_name, sheet_name='items_stock')
-participants = pd.read_excel(file_name, sheet_name='participants')
-sorts = pd.read_excel(file_name, sheet_name='sorts')
+    # read data
+    baskets = pd.read_excel(file_name, sheet_name='baskets')
+    baskets_categories = pd.read_excel(file_name, sheet_name='baskets_categories')
+    items = pd.read_excel(file_name, sheet_name='items')
+    items_stock = pd.read_excel(file_name, sheet_name='items_stock')
+    participants = pd.read_excel(file_name, sheet_name='participants')
+    sorts = pd.read_excel(file_name, sheet_name='sorts')
 
-# generate person dict
-persons = {}
-p_ids = set(sorts['p_id'])
-for p_id in p_ids:
+    # generate person dict
+    persons = {}
+    p_ids = set(sorts['p_id'])
+    for p_id in p_ids:
 
-    temp_sorts = sorts[sorts['p_id'] == p_id]
-    i_ids = temp_sorts['i_id']
+        temp_sorts = sorts[sorts['p_id'] == p_id]
+        i_ids = temp_sorts['i_id']
 
-    clothes = {}
-    for i_id in i_ids:
-        # focus on stock items first
-        if int(i_id) <= 16:
-            item = items_stock[items_stock['i_id'] == int(i_id)]
-            sort = temp_sorts[temp_sorts['i_id'] == i_id]
-            b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
-            # print(i_id)
-            i_colour = item['is_colour'].values[0]
-            i_type = item['is_label'].values[0]
-            # print(i_colour)
-            # print(i_type)
-            basket = baskets[baskets['b_id'] == int(b_id)]
-            bc_id_1 = basket['bc_id_1'].values[0]
-            bc_id_2 = basket['bc_id_2'].values[0]
-            b_label = basket['b_label'].values[0]
+        clothes = {}
+        for i_id in i_ids:
+            # focus on stock items first
+            if int(i_id) <= 16:
+                item = items_stock[items_stock['i_id'] == int(i_id)]
+                sort = temp_sorts[temp_sorts['i_id'] == i_id]
+                b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
+                # print(i_id)
+                i_colour = item['is_colour'].values[0]
+                i_type = item['is_label'].values[0]
+                # print(i_colour)
+                # print(i_type)
+                basket = baskets[baskets['b_id'] == int(b_id)]
+                bc_id_1 = basket['bc_id_1'].values[0]
+                bc_id_2 = basket['bc_id_2'].values[0]
+                b_label = basket['b_label'].values[0]
 
-            cloth = {}
-            cloth['i_colour'] = i_colour
-            cloth['i_type'] = i_type
-            cloth['b_id'] = b_id
-            cloth['bc_id_1'] = bc_id_1
-            cloth['bc_id_2'] = bc_id_2
-            cloth['b_label'] = b_label
+                cloth = {}
+                cloth['i_colour'] = i_colour
+                cloth['i_type'] = i_type
+                cloth['b_id'] = b_id
+                cloth['bc_id_1'] = bc_id_1
+                cloth['bc_id_2'] = bc_id_2
+                cloth['b_label'] = b_label
 
-            clothes[int(i_id)] = cloth
+                clothes[int(i_id)] = cloth
 
-    persons[p_id] = clothes
+        persons[p_id] = clothes
 
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(persons)
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(persons)
+
+    return persons
 
 # persons
 # - key: person id
@@ -71,18 +63,46 @@ pp.pprint(persons)
 #       - key: i_id
 #       - value: clothe sorting information including colour, type, basket id, basket category id, basket label
 
-# # Gamma
-# gamma = 0.8
-#
-# # Start training
-# for i in range(10000):
-#     # Random intialised position
-#     state = random.randint(0, 3)
-#
-#     while state != 3:
-#         # randomly choose action given by human
-#         next_state = random.randint(0, 3) # TODO
-#         q[state, next_state] = r[state, next_state] + gamma * q[next_state].max()
-#         state = next_state
-#
-# print(q)
+class Sensor:
+    def detect(self, i_id):
+        colour = ''
+        type = ''
+        return {colour, type}
+
+class Robot:
+    def __init__(self):
+        self.sensor = Sensor()
+
+    def pick(self, i_id):
+        print('Pick up items %d...' % i_id)
+
+    def put(self, b_id):
+        print('Put into basket %i' % b_id)
+
+    def moving(self, b_id):
+        print('Moving to basket %i' % b_id)
+
+    def ask_for_label(self):
+        # TODO
+        print('Input label: ')
+
+class Controller:
+    def __init__(self):
+        self.robot = Robot()
+        self.data = load_data()
+        self.model = QLearning()
+        self.baskets = {1: 'white', 3: 'dark', 5: 'colour'}
+        self.nob = 3 # number of baskets
+        self.mob = 6 # max number of baskets
+
+    def train(self):
+        gamma = 0.8
+        noi = 1000 # number of iterations
+        print('Training...')
+
+        self.model.train(gamma, noi, self.data, self.baskets, self.robot)
+
+        print(self.model.get_result())
+
+controller = Controller()
+controller.train()
