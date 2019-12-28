@@ -63,10 +63,10 @@ stock_distribution['total'] = stock_distribution.sum(1).T
 print(stock_distribution)
 
 # csv_filename = "total_distribution.csv"
-# total_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
+# distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
-csv_filename = "first_choice_distribution.csv"
-distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
+csv_filename = "stock_distribution.csv"
+stock_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 ## extract the common combination of the labels
 dict_bc_id = {}
@@ -87,7 +87,12 @@ for row in baskets.iterrows():
         dict_bc_label[key_label] = dict_bc_label[key_label] + 1 if key_label in dict_bc_label else 1
 
 print(sorted(dict_bc_id.items(), key=lambda d: d[1], reverse=True))
+combination = sorted(dict_bc_label.items(), key=lambda d: d[1], reverse=True)
+csv_filename = "combination.csv"
+combination = pd.DataFrame(combination)
+combination.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 print(sorted(dict_bc_label.items(), key=lambda d: d[1], reverse=True))
+
 
 def get_user_dsitrubtion(label):
     index_names = ['participant' + str(id) for id in range(1, participants_num + 1)]
@@ -118,10 +123,17 @@ def get_user_dsitrubtion(label):
 
     return user_distribution
 
-user_distribution = get_user_dsitrubtion(1)
+the_id = 1
+user_distribution = get_user_dsitrubtion(the_id)
 print(user_distribution)
-user_distribution = get_user_dsitrubtion(2)
+csv_filename = "user_distribution" + str(the_id) + ".csv"
+user_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
+
+the_id = 2
+user_distribution = get_user_dsitrubtion(the_id)
 print(user_distribution)
+csv_filename = "user_distribution" + str(the_id) + ".csv"
+user_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 # 1+2: white and light: most common combination
 # 3+5, 3+7, 3+9, 3+10, 3+11: colour + description
