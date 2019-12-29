@@ -1,6 +1,7 @@
 import pandas as pd
 import pprint
 from models.QLearning import QLearning
+from models.QLearningModel import QLearningModel
 
 
 def load_data():
@@ -73,14 +74,43 @@ class Robot:
     def __init__(self):
         self.sensor = Sensor()
 
-    def pick(self, i_id):
-        print('Pick up items %d...' % i_id)
+    def pick(self, i_id, i_colour, i_type):
+        print('Pick up items %d which is %s %s...' % (i_id, i_colour, i_type))
 
     def put(self, b_id):
-        print('Put into basket %i' % b_id)
+        print('Put into basket %s' % b_id)
 
     def moving(self, b_id):
-        print('Moving to basket %i' % b_id)
+        print('Moving to basket %s' % b_id)
+
+    def map_to_colour(self, i_colour):
+        if 'white' in i_colour:
+            return 'white'
+        elif 'black' in i_colour:
+            return 'black'
+        elif 'dark' in i_colour:
+            return 'dark'
+        else:
+            return 'colours'
+
+    def map_to_type(self, i_type):
+        if 't-shirt' in i_type:
+            return 't-shirt'
+        elif 'socks' in i_type:
+            return 'socks'
+        elif 'polo' in i_type:
+            return 'polo'
+        elif 'pants' in i_type or 'jogger' in i_type:
+            return 'pants'
+        elif 'jeans' in i_type:
+            return 'jeans'
+        elif 'shirt' in i_type or 'blouse' in i_type:
+            return 'shirt'
+        elif 'skirt' in i_type:
+            return 'skirt'
+        else:
+            return 'others'
+
 
     def ask_for_label(self):
         # TODO
@@ -90,7 +120,7 @@ class Controller:
     def __init__(self):
         self.robot = Robot()
         self.data = load_data()
-        self.model = QLearning()
+        self.model = QLearningModel()
         self.baskets = {1: 'white', 3: 'dark', 5: 'colour'}
         self.nob = 3 # number of baskets
         self.mob = 6 # max number of baskets

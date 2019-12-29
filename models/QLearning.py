@@ -29,6 +29,7 @@ class QLearning:
             # Train with an entire sorting procedure
             for i_id in clothes.keys():
                 cloth = clothes[i_id]
+
                 # Randomly a label for current cloth
                 random_label = random.sample(baskets.keys(), 1)
                 # label_name = baskets[random_label]
