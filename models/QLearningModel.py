@@ -1,6 +1,7 @@
 import numpy as np
 import random
 
+
 class QLearningModel:
     def __init__(self):
 
@@ -71,7 +72,7 @@ class QLearningModel:
                 actions = []
                 rewards = []
                 for action in range(3):
-                    label = list(baskets.values())[action]
+                    label = list(baskets.keys())[action]
                     reward = self.get_reward(label, correct_label)
                     actions.append(action)
                     rewards.append(reward)
@@ -83,7 +84,7 @@ class QLearningModel:
                 print(rewards)
                 while rewards[random_action[0]] != max_reward:
                     random_action = random.sample(actions, 1)
-                random_label = list(baskets.values())[random_action[0]]
+                random_label = list(baskets.keys())[random_action[0]]
                 # label_name = baskets[random_label]
 
                 # Put cloth into the basket
@@ -92,7 +93,6 @@ class QLearningModel:
                 robot.put(random_label)
 
                 # Choose next label for next cloth
-                next_state = 'stop'
                 if i_id < 16:
                     next_cloth = clothes[i_id + 1]
                     next_colour_index = self.colours.index(robot.map_to_colour(next_cloth['i_colour']))
@@ -101,7 +101,6 @@ class QLearningModel:
                     self.q[state, random_action] = max_reward + self.gamma * self.q[next_state].max()
                 else:
                     self.q[state, random_action] = max_reward + 0
-                state = next_state
 
-    def get_result(self):
+    def get_q_table(self):
         return self.q

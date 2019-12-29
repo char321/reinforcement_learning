@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import pprint
 from models.QLearning import QLearning
 from models.QLearningModel import QLearningModel
@@ -57,6 +58,7 @@ def load_data():
 
     return persons
 
+
 # persons
 # - key: person id
 # - value: clothes sorting information (as a dict)
@@ -69,6 +71,7 @@ class Sensor:
         colour = ''
         type = ''
         return {colour, type}
+
 
 class Robot:
     def __init__(self):
@@ -111,10 +114,10 @@ class Robot:
         else:
             return 'others'
 
-
     def ask_for_label(self):
         # TODO
         print('Input label: ')
+
 
 class Controller:
     def __init__(self):
@@ -122,17 +125,55 @@ class Controller:
         self.data = load_data()
         self.model = QLearningModel()
         self.baskets = {1: 'white', 3: 'dark', 5: 'colour'}
-        self.nob = 3 # number of baskets
-        self.mob = 6 # max number of baskets
+        self.nob = 3  # number of baskets
+        self.mob = 6  # max number of baskets
 
     def train(self):
         gamma = 0.8
-        noi = 1000 # number of iterations
+        noi = 100000  # number of iterations
         print('Training...')
 
         self.model.train(gamma, noi, self.data, self.baskets, self.robot)
 
-        print(self.model.get_result())
+    def test_person(self, p_id):
+        q_table = self.model.get_q_table()
+        print(q_table)
+
+        clothes = self.data[p_id]
+        results = {}
+        for i_id in clothes.keys():
+            cloth = clothes[i_id]
+            correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
+
+            # Get the information of cloth
+            i_colour = self.robot.map_to_colour(cloth['i_colour'])
+            i_type = self.robot.map_to_type(cloth['i_type'])
+            colour_index = self.model.colours.index(i_colour)
+            type_index = self.model.types.index(i_type)
+            state = colour_index * len(self.model.types) + type_index
+
+            actions = q_table[state]
+            action = np.argmax(actions)
+            label = list(self.baskets.keys())[action]
+
+
+            print(label)
+            print(correct_label)
+            result = 1 if label in correct_label else 0
+            results[i_id] = result
+
+        print(results)
+        return results
+
+    def test_all(self):
+        total_accuracy = 0
+        for p_id in range(1, 17):
+            results = self.test_person(p_id)
+            total_accuracy += (sum(results.values()) / 16) / 30
+
+        print(total_accuracy)
+
 
 controller = Controller()
 controller.train()
+controller.test_all()
