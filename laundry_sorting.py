@@ -123,21 +123,23 @@ class Controller:
     def __init__(self):
         self.robot = Robot()
         self.data = load_data()
-        self.model = QLearningModel()
-        self.baskets = {1: 'white', 3: 'dark', 5: 'colour'}
-        self.nob = 3  # number of baskets
+        # self.baskets = {1: 'white', 3: 'dark', 5: 'colour'}
+        self.baskets = {1: 'whites', 2: 'lights', 3: 'darks', 4: 'brights', 5: 'colours',
+                        6: 'handwash', 7: 'denims', 8: 'delicates', 9: 'children', 10: 'mixed', 11: 'miscellaneous'}
+        self.nob = len(self.baskets)  # number of baskets
         self.mob = 6  # max number of baskets
+        self.model = QLearningModel(self.nob)
 
     def train(self):
         gamma = 0.8
-        noi = 100000  # number of iterations
+        noi = 5000  # number of iterations
         print('Training...')
 
         self.model.train(gamma, noi, self.data, self.baskets, self.robot)
 
     def test_person(self, p_id):
         q_table = self.model.get_q_table()
-        print(q_table)
+        # print(q_table)
 
         clothes = self.data[p_id]
         results = {}
@@ -156,24 +158,41 @@ class Controller:
             action = np.argmax(actions)
             label = list(self.baskets.keys())[action]
 
-
-            print(label)
-            print(correct_label)
+            # print(label)
+            # print(correct_label)
             result = 1 if label in correct_label else 0
             results[i_id] = result
 
+        print("Person %s" % str(p_id))
         print(results)
         return results
 
     def test_all(self):
         total_accuracy = 0
-        for p_id in range(1, 17):
+        for p_id in range(1, 31):
             results = self.test_person(p_id)
             total_accuracy += (sum(results.values()) / 16) / 30
 
         print(total_accuracy)
 
+    def update(self, p_id):
+        gamma = 0.8
+        noi = 5000  # number of iterations
+        print('Updating...')
+
+        self.model.update(gamma, noi, self.data, self.baskets, self.robot, p_id)
 
 controller = Controller()
 controller.train()
 controller.test_all()
+
+q_table = np.copy(controller.model.get_q_table())
+total_accuracy = 0
+for p_id in range(1, 31):
+    controller.model.set_q_table(np.copy(q_table))
+    controller.update(p_id)
+    results = controller.test_person(p_id)
+    total_accuracy += (sum(results.values()) / 16) / 30
+print(total_accuracy)
+
+
