@@ -156,6 +156,50 @@ class QLearningModel:
                 else:
                     self.q[state, random_action] = max_reward + 0
 
+    def train_with_single_action(self, gamma, nop, cloth, baskets, robot):
+        self.gamma = gamma
+
+        # Start training
+        for i in range(nop):
+            # Get the information of cloth
+            i_colour = robot.map_to_colour(cloth['i_colour'])
+            i_type = robot.map_to_type(cloth['i_type'])
+
+            # Check result
+            first_label = cloth['bc_id_1']
+            correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
+
+            # Use information of cloth as state
+            colour_index = self.colours.index(i_colour)
+            type_index = self.types.index(i_type)
+            state = colour_index * len(self.types) + type_index
+
+            actions = []
+            rewards = []
+            for action in range(len(baskets)):
+                label = list(baskets.keys())[action]
+                reward = self.get_reward(label, correct_label) * 10
+                actions.append(action)
+                rewards.append(reward)
+
+            # Randomly choose an action that max the reward
+            max_reward = max(rewards)
+            random_action = random.sample(actions, 1)
+            # print(random_action)
+            # print(rewards)
+            while rewards[random_action[0]] != max_reward:
+                random_action = random.sample(actions, 1)
+            random_label = list(baskets.keys())[random_action[0]]
+            # label_name = baskets[random_label]
+
+            # TODO Put cloth into the basket
+            # robot.pick(i_id, i_colour, i_type)
+            # robot.moving(random_label)
+            # robot.put(random_label)
+
+            next_state = state
+            self.q[state, random_action] = max_reward + self.gamma * self.q[next_state].max()
+
     def get_q_table(self):
         return self.q
 
