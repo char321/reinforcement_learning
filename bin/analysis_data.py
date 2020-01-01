@@ -1,16 +1,20 @@
 import pandas as pd
 import numpy as np
+import os
 from IPython.display import display
 
-file_name = 'Database.xlsx'
+dir_abs_name = os.path.dirname(os.path.abspath(__file__))
+base_path = os.path.dirname(dir_abs_name) + '/data'
+file_name = '/database/Database.xlsx'
 
 # read data
-baskets = pd.read_excel(file_name, sheet_name='baskets')
-baskets_categories = pd.read_excel(file_name, sheet_name='baskets_categories')
-items = pd.read_excel(file_name, sheet_name='items')
-items_stock = pd.read_excel(file_name, sheet_name='items_stock')
-participants = pd.read_excel(file_name, sheet_name='participants')
-sorts = pd.read_excel(file_name, sheet_name='sorts')
+data_path = base_path + file_name
+baskets = pd.read_excel(data_path, sheet_name='baskets')
+baskets_categories = pd.read_excel(data_path, sheet_name='baskets_categories')
+items = pd.read_excel(data_path, sheet_name='items')
+items_stock = pd.read_excel(data_path, sheet_name='items_stock')
+participants = pd.read_excel(data_path, sheet_name='participants')
+sorts = pd.read_excel(data_path, sheet_name='sorts')
 
 ## Get the distribution of common items and personal items
 # number of common items and number of basket labels
@@ -62,10 +66,10 @@ stock_distribution.loc['mean'] = stock_distribution.mean(0).T
 stock_distribution['total'] = stock_distribution.sum(1).T
 print(stock_distribution)
 
-# csv_filename = "total_distribution.csv"
+# csv_filename = base_path + "/output/total_distribution.csv"
 # distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
-csv_filename = "stock_distribution.csv"
+csv_filename = base_path + "/output/stock_distribution.csv"
 stock_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 ## extract the common combination of the labels
@@ -88,7 +92,7 @@ for row in baskets.iterrows():
 
 print(sorted(dict_bc_id.items(), key=lambda d: d[1], reverse=True))
 combination = sorted(dict_bc_label.items(), key=lambda d: d[1], reverse=True)
-csv_filename = "combination.csv"
+csv_filename = base_path + "/output/combination.csv"
 combination = pd.DataFrame(combination)
 combination.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 print(sorted(dict_bc_label.items(), key=lambda d: d[1], reverse=True))
@@ -126,13 +130,13 @@ def get_user_dsitrubtion(label):
 the_id = 1
 user_distribution = get_user_dsitrubtion(the_id)
 print(user_distribution)
-csv_filename = "user_distribution" + str(the_id) + ".csv"
+csv_filename = base_path + "/output/user_distribution" + str(the_id) + ".csv"
 user_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 the_id = 2
 user_distribution = get_user_dsitrubtion(the_id)
 print(user_distribution)
-csv_filename = "user_distribution" + str(the_id) + ".csv"
+csv_filename = base_path + "/output/user_distribution" + str(the_id) + ".csv"
 user_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 # 1+2: white and light: most common combination

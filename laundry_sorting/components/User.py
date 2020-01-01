@@ -1,5 +1,3 @@
-from components.Database import Database
-
 class User:
     def __init__(self, p_id, clothes):
         self.p_id = p_id

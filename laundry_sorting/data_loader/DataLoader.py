@@ -1,32 +1,36 @@
 import pandas as pd
+import os
 import pprint
 
-class Database:
-
-    def load_data(self):
-        file_name = 'Database.xlsx'
+class DataLoader:
+    def __init__(self):
+        dir_abs_name = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.dirname(dir_abs_name)
+        base_path = os.path.dirname(base_path) + '/data'
+        file_name = '/database/Database.xlsx'
 
         # read data
-        baskets = pd.read_excel(file_name, sheet_name='baskets')
-        baskets_categories = pd.read_excel(file_name, sheet_name='baskets_categories')
-        items = pd.read_excel(file_name, sheet_name='items')
-        items_stock = pd.read_excel(file_name, sheet_name='items_stock')
-        participants = pd.read_excel(file_name, sheet_name='participants')
-        sorts = pd.read_excel(file_name, sheet_name='sorts')
+        data_path = base_path + file_name
+        self.baskets = pd.read_excel(data_path, sheet_name='baskets')
+        self.baskets_categories = pd.read_excel(data_path, sheet_name='baskets_categories')
+        self.items = pd.read_excel(data_path, sheet_name='items')
+        self.items_stock = pd.read_excel(data_path, sheet_name='items_stock')
+        self.sorts = pd.read_excel(data_path, sheet_name='sorts')
 
+    def load_sorting_data(self):
         # generate person dict
         persons = {}
-        p_ids = set(sorts['p_id'])
+        p_ids = set(self.sorts['p_id'])
         for p_id in p_ids:
 
-            temp_sorts = sorts[sorts['p_id'] == p_id]
+            temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
             i_ids = temp_sorts['i_id']
 
             clothes = {}
             for i_id in i_ids:
                 # focus on stock items first
                 if int(i_id) <= 16:
-                    item = items_stock[items_stock['i_id'] == int(i_id)]
+                    item = self.items_stock[self.items_stock['i_id'] == int(i_id)]
                     sort = temp_sorts[temp_sorts['i_id'] == i_id]
                     b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
                     # print(i_id)
@@ -34,7 +38,7 @@ class Database:
                     i_type = item['is_label'].values[0]
                     # print(i_colour)
                     # print(i_type)
-                    basket = baskets[baskets['b_id'] == int(b_id)]
+                    basket = self.baskets[self.baskets['b_id'] == int(b_id)]
                     bc_id_1 = basket['bc_id_1'].values[0]
                     bc_id_2 = basket['bc_id_2'].values[0]
                     b_label = basket['b_label'].values[0]
@@ -55,3 +59,7 @@ class Database:
         pp.pprint(persons)
 
         return persons
+
+    def load_baskets_categories(self):
+        # TODO
+        return

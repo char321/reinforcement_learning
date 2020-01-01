@@ -1,12 +1,9 @@
 import pandas as pd
 import numpy as np
-import pprint
-from models.QLearning import QLearning
+from data_loader.DataLoader import DataLoader
 from models.QLearningModel import QLearningModel
-from components.Database import Database
-from components.Robot import Robot
 from components.User import User
-
+from components.Robot import Robot
 
 # persons
 # - key: person id
@@ -18,8 +15,8 @@ from components.User import User
 class Controller:
     def __init__(self):
         self.robot = Robot()
-        self.database = Database()
-        self.data = self.database.load_data()
+        self.dataloader = DataLoader()
+        self.data = self.dataloader.load_sorting_data()
         self.baskets = {1: 'white', 3: 'dark', 5: 'colour'}
         # self.baskets = {1: 'whites', 2: 'lights', 3: 'darks', 4: 'brights', 5: 'colours',
         #                 6: 'handwash', 7: 'denims', 8: 'delicates', 9: 'children', 10: 'mixed', 11: 'miscellaneous'}
@@ -122,22 +119,3 @@ class Controller:
 
             # System update the q-table
             self.model.train_with_single_action(gamma, nop, cloth, self.baskets, self.robot)
-
-
-controller = Controller()
-controller.train()
-print(controller.model.get_q_table())
-controller.test_person(30)
-controller.set_user(30)
-controller.apply(30)
-controller.test_person(30)
-print(controller.model.get_q_table())
-
-# q_table = np.copy(controller.model.get_q_table())
-# total_accuracy = 0
-# for p_id in range(1, 31):
-#     controller.model.set_q_table(np.copy(q_table))
-#     controller.update(p_id)
-#     results = controller.test_person(p_id)
-#     total_accuracy += (sum(results.values()) / 16) / 30
-# print(total_accuracy)
