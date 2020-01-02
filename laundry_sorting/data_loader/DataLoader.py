@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import pprint
 
+
 class DataLoader:
     def __init__(self):
         dir_abs_name = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +17,34 @@ class DataLoader:
         self.items = pd.read_excel(data_path, sheet_name='items')
         self.items_stock = pd.read_excel(data_path, sheet_name='items_stock')
         self.sorts = pd.read_excel(data_path, sheet_name='sorts')
+
+    def map_to_colour(self, i_colour):
+        if 'white' in i_colour:
+            return 'white'
+        elif 'black' in i_colour:
+            return 'black'
+        elif 'dark' in i_colour:
+            return 'dark'
+        else:
+            return 'colours'
+
+    def map_to_type(self, i_type):
+        if 't-shirt' in i_type:
+            return 't-shirt'
+        elif 'socks' in i_type:
+            return 'socks'
+        elif 'polo' in i_type:
+            return 'polo'
+        elif 'pants' in i_type or 'jogger' in i_type:
+            return 'pants'
+        elif 'jeans' in i_type:
+            return 'jeans'
+        elif 'shirt' in i_type or 'blouse' in i_type:
+            return 'shirt'
+        elif 'skirt' in i_type:
+            return 'skirt'
+        else:
+            return 'others'
 
     def load_sorting_data(self):
         # generate person dict
@@ -34,8 +63,8 @@ class DataLoader:
                     sort = temp_sorts[temp_sorts['i_id'] == i_id]
                     b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
                     # print(i_id)
-                    i_colour = item['is_colour'].values[0]
-                    i_type = item['is_label'].values[0]
+                    i_colour = self.map_to_colour(item['is_colour'].values[0])
+                    i_type = self.map_to_type(item['is_label'].values[0])
                     # print(i_colour)
                     # print(i_type)
                     basket = self.baskets[self.baskets['b_id'] == int(b_id)]

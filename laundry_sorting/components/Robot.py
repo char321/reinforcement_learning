@@ -12,35 +12,6 @@ class Robot:
     def moving(self, b_id):
         print('Moving to basket %s' % b_id)
 
-    def map_to_colour(self, i_colour):
-        if 'white' in i_colour:
-            return 'white'
-        elif 'black' in i_colour:
-            return 'black'
-        elif 'dark' in i_colour:
-            return 'dark'
-        else:
-            return 'colours'
-
-    def map_to_type(self, i_type):
-        if 't-shirt' in i_type:
-            return 't-shirt'
-        elif 'socks' in i_type:
-            return 'socks'
-        elif 'polo' in i_type:
-            return 'polo'
-        elif 'pants' in i_type or 'jogger' in i_type:
-            return 'pants'
-        elif 'jeans' in i_type:
-            return 'jeans'
-        elif 'shirt' in i_type or 'blouse' in i_type:
-            return 'shirt'
-        elif 'skirt' in i_type:
-            return 'skirt'
-        else:
-            return 'others'
-
     def add_new_label(self, label_id, baskets):
-        # TODO - check if label is already existed
         baskets[label_id] = self.full_labels[label_id]
         return baskets

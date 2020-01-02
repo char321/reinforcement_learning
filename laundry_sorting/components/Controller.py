@@ -5,6 +5,7 @@ from models.QLearningModel import QLearningModel
 from components.User import User
 from components.Robot import Robot
 
+
 # persons
 # - key: person id
 # - value: clothes sorting information (as a dict)
@@ -31,17 +32,10 @@ class Controller:
     def ask_for_label(self, cloth):
         return self.user.guide_label(cloth)
 
-    def train(self):
-        gamma = 0.8
-        noi = 5000  # number of iterations
-        print('Training...')
-
-        self.model.train(gamma, noi, self.data, self.baskets, self.robot)
-
     def assign_label(self, q_table, cloth):
         # Get the information of cloth
-        i_colour = self.robot.map_to_colour(cloth['i_colour'])
-        i_type = self.robot.map_to_type(cloth['i_type'])
+        i_colour = cloth['i_colour']
+        i_type = cloth['i_type']
         colour_index = self.model.colours.index(i_colour)
         type_index = self.model.types.index(i_type)
         state = colour_index * len(self.model.types) + type_index
@@ -51,6 +45,13 @@ class Controller:
         label = list(self.baskets.keys())[action]
 
         return label
+
+    def train(self):
+        gamma = 0.8
+        noi = 5000  # number of iterations
+        print('Training...')
+
+        self.model.train(gamma, noi, self.data, self.baskets)
 
     def test_person(self, p_id):
         q_table = self.model.get_q_table()
@@ -85,7 +86,7 @@ class Controller:
         noi = 5000  # number of iterations
         print('Updating...')
 
-        self.model.update(gamma, noi, self.data, self.baskets, self.robot, p_id)
+        self.model.update(gamma, noi, self.data, self.baskets, p_id)
 
     def apply(self, p_id):
         gamma = 0.8
@@ -108,14 +109,20 @@ class Controller:
             else:  # incorrect
                 asked_label = self.ask_for_label(cloth)
                 if asked_label not in self.baskets:
-                    # TODO - other constraints e.g. mob
                     # TODO - reference?
-                    self.baskets = self.robot.add_new_label(asked_label, self.baskets)
-                    # extend q-table of model
-                    q_table = self.model.get_q_table()
-                    q_table = np.insert(q_table, q_table.shape[1], values=np.zeros((q_table.shape[0], 1)).transpose(),
-                                        axis=1)
-                    self.model.set_q_table(q_table)
+                    if self.nob >= self.mob:
+                        print("Already achieve maximum number of baskets!")
+                    else:
+                        self.baskets = self.robot.add_new_label(asked_label, self.baskets)
+                        self.nob += 1
+                        print("Add new basket: %d" % asked_label)
+
+                        # Extend q_table
+                        q_table = self.model.get_q_table()
+                        q_table = np.insert(q_table, q_table.shape[1],
+                                            values=np.zeros((q_table.shape[0], 1)).transpose(),
+                                            axis=1)
+                        self.model.set_q_table(q_table)
 
             # System update the q-table
-            self.model.train_with_single_action(gamma, nop, cloth, self.baskets, self.robot)
+            self.model.train_with_single_action(gamma, nop, cloth, self.baskets)

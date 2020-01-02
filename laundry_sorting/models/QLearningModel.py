@@ -42,7 +42,7 @@ class QLearningModel:
         else:
             return -1
 
-    def train(self, gamma, noi, data, baskets, robot):
+    def train(self, gamma, noi, data, baskets):
         self.gamma = gamma
         # Start training
         for i in range(noi):
@@ -56,8 +56,8 @@ class QLearningModel:
                 cloth = clothes[i_id]
 
                 # Get the information of cloth
-                i_colour = robot.map_to_colour(cloth['i_colour'])
-                i_type = robot.map_to_type(cloth['i_type'])
+                i_colour = cloth['i_colour']
+                i_type = cloth['i_type']
 
                 # Check result
                 correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
@@ -93,14 +93,14 @@ class QLearningModel:
                 # Choose next label for next cloth
                 if i_id < 16:
                     next_cloth = clothes[i_id + 1]
-                    next_colour_index = self.colours.index(robot.map_to_colour(next_cloth['i_colour']))
-                    next_type_index = self.types.index(robot.map_to_type(next_cloth['i_type']))
+                    next_colour_index = self.colours.index(next_cloth['i_colour'])
+                    next_type_index = self.types.index(next_cloth['i_type'])
                     next_state = next_colour_index * len(self.types) + next_type_index
                     self.q[state, random_action] = max_reward + self.gamma * self.q[next_state].max()
                 else:
                     self.q[state, random_action] = max_reward + 0
 
-    def update(self, gamma, noi, data, baskets, robot, p_id):
+    def update(self, gamma, noi, data, baskets, p_id):
         self.gamma = gamma
 
         # Start training
@@ -112,8 +112,8 @@ class QLearningModel:
                 cloth = clothes[i_id]
 
                 # Get the information of cloth
-                i_colour = robot.map_to_colour(cloth['i_colour'])
-                i_type = robot.map_to_type(cloth['i_type'])
+                i_colour = cloth['i_colour']
+                i_type = cloth['i_type']
 
                 # Check result
                 correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
@@ -149,21 +149,21 @@ class QLearningModel:
                 # Choose next label for next cloth
                 if i_id < 16:
                     next_cloth = clothes[i_id + 1]
-                    next_colour_index = self.colours.index(robot.map_to_colour(next_cloth['i_colour']))
-                    next_type_index = self.types.index(robot.map_to_type(next_cloth['i_type']))
+                    next_colour_index = self.colours.index(next_cloth['i_colour'])
+                    next_type_index = self.types.index(next_cloth['i_type'])
                     next_state = next_colour_index * len(self.types) + next_type_index
                     self.q[state, random_action] = max_reward + self.gamma * self.q[next_state].max()
                 else:
                     self.q[state, random_action] = max_reward + 0
 
-    def train_with_single_action(self, gamma, nop, cloth, baskets, robot):
+    def train_with_single_action(self, gamma, nop, cloth, baskets):
         self.gamma = gamma
 
         # Start training
         for i in range(nop):
             # Get the information of cloth
-            i_colour = robot.map_to_colour(cloth['i_colour'])
-            i_type = robot.map_to_type(cloth['i_type'])
+            i_colour = cloth['i_colour']
+            i_type = cloth['i_type']
 
             # Check result
             first_label = cloth['bc_id_1']
