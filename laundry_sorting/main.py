@@ -4,10 +4,13 @@ def main():
     controller = Controller()
     controller.train()
     print(controller.model.get_q_table())
-    controller.test_person(30)
-    controller.set_user(30)
-    controller.apply(30)
-    controller.test_person(30)
+    # controller.test_all()
+
+    p_id = 29
+    controller.test_person(p_id)
+    controller.set_user(p_id)
+    controller.apply(p_id)
+    controller.test_person(p_id)
     print(controller.model.get_q_table())
 
     # q_table = np.copy(controller.model.get_q_table())

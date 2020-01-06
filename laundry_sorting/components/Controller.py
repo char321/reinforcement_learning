@@ -47,11 +47,11 @@ class Controller:
         return label
 
     def train(self):
-        gamma = 0.8
-        noi = 5000  # number of iterations
+        self.model.set_parameters(alpha=0.5, gamma=0.8, epsilon=0.1)
+        noi = 10000  # number of iterations
         print('Training...')
 
-        self.model.train(gamma, noi, self.data, self.baskets)
+        self.model.train(noi, self.data, self.baskets)
 
     def test_person(self, p_id):
         q_table = self.model.get_q_table()
@@ -81,15 +81,9 @@ class Controller:
 
         print(total_accuracy)
 
-    def update(self, p_id):
-        gamma = 0.8
-        noi = 5000  # number of iterations
-        print('Updating...')
-
-        self.model.update(gamma, noi, self.data, self.baskets, p_id)
-
     def apply(self, p_id):
-        gamma = 0.8
+        self.model.set_parameters(alpha=0.5, gamma=0.8, epsilon=0.1)
+
         nop = 500  # number of repeat time for each sorting behaviour
         print('Applying...')
 
@@ -125,4 +119,4 @@ class Controller:
                         self.model.set_q_table(q_table)
 
             # System update the q-table
-            self.model.train_with_single_action(gamma, nop, cloth, self.baskets)
+            self.model.train_with_single_action(nop, cloth, self.baskets)
