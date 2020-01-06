@@ -153,5 +153,3 @@ user_distribution.to_csv(csv_filename, float_format='%.3f', index=True, header=T
 # overall: based on colour, can cover most clothes, easy to extend: add new basket with specific purpose such as mix, children
 # show in tables # - may assist with graph (data visualization)
 # calculate the proportion # - algorithm to choose the labels? -- 量化
-
-# Error in data
