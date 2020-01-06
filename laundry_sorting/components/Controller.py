@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 from data_loader.DataLoader import DataLoader
-from models.QLearningModel import QLearningModel
-from models.SarsaModel import SarsaModel
+from models.TDModel import QLearningModel
+from models.TDModel import SarsaModel
 from components.User import User
 from components.Robot import Robot
 

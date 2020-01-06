@@ -72,13 +72,8 @@ class DataLoader:
                     bc_id_2 = basket['bc_id_2'].values[0]
                     b_label = basket['b_label'].values[0]
 
-                    cloth = {}
-                    cloth['i_colour'] = i_colour
-                    cloth['i_type'] = i_type
-                    cloth['b_id'] = b_id
-                    cloth['bc_id_1'] = bc_id_1
-                    cloth['bc_id_2'] = bc_id_2
-                    cloth['b_label'] = b_label
+                    cloth = {'i_colour': i_colour, 'i_type': i_type, 'b_id': b_id, 'bc_id_1': bc_id_1,
+                             'bc_id_2': bc_id_2, 'b_label': b_label}
 
                     clothes[int(i_id)] = cloth
 

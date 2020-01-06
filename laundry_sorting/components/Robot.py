@@ -1,7 +1,7 @@
 class Robot:
     def __init__(self):
-        self.full_labels =  {1: 'white', 2: 'light', 3: 'dark', 4: 'bright', 5: 'colour',
-                        6: 'handwash', 7: 'denim', 8: 'delicate', 9: 'children', 10: 'mixed', 11: 'miscellaneous'}
+        self.full_labels = {1: 'white', 2: 'light', 3: 'dark', 4: 'bright', 5: 'colour',
+                            6: 'handwash', 7: 'denim', 8: 'delicate', 9: 'children', 10: 'mixed', 11: 'miscellaneous'}
 
     def pick(self, i_id, i_colour, i_type):
         print('Pick up items %d which is %s %s...' % (i_id, i_colour, i_type))

@@ -1,6 +1,7 @@
 import numpy as np
 import random
 
+
 class TDModel:
     def __init__(self, nob):
 
@@ -89,14 +90,6 @@ class TDModel:
     def train_with_single_action(self, nop, cloth, baskets):
         # Start training
         for i in range(nop):
-            # Get the information of cloth
-            i_colour = cloth['i_colour']
-            i_type = cloth['i_type']
-
-            # Check result
-            first_label = cloth['bc_id_1']
-            correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
-
             # Get the state
             state = self.get_state(cloth['i_colour'], cloth['i_type'])
 
@@ -106,11 +99,30 @@ class TDModel:
             # Get the reward
             reward = self.get_reward(label=list(baskets.keys())[action], cloth=cloth) * 2
 
-            # TODO Put cloth into the basket
-            # robot.pick(i_id, i_colour, i_type)
-            # robot.moving(random_label)
-            # robot.put(random_label)
-
             next_state = state
             self.learn(state, action, reward, next_state)
 
+
+class QLearningModel(TDModel):
+    def learn(self, state, action, reward, next_state):
+        current_q = self.q[state][action]
+
+        if next_state:
+            # Bellman function
+            new_q = reward + self.gamma * max(self.q[next_state])
+            self.q[state][action] += self.alpha * (new_q - current_q)
+        else:
+            self.q[state, action] += self.alpha * (reward - current_q)
+
+
+class SarsaModel(TDModel):
+    def learn(self, state, action, reward, next_state):
+        current_q = self.q[state][action]
+
+        if next_state:
+            # Bellman function
+            next_action = self.get_action(next_state)
+            new_q = reward + self.gamma * self.q[next_state][next_action]
+            self.q[state][action] += self.alpha * (new_q - current_q)
+        else:
+            self.q[state, action] += self.alpha * (reward - current_q)
