@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from data_loader.DataLoader import DataLoader
 from models.QLearningModel import QLearningModel
+from models.SarsaModel import SarsaModel
 from components.User import User
 from components.Robot import Robot
 
@@ -25,6 +26,12 @@ class Controller:
         self.mob = 6  # max number of baskets
         self.model = QLearningModel(self.nob)
         self.user = None
+
+    def set_model(self, model):
+        if model == 'QLearning':
+            self.model = QLearningModel(self.nob)
+        if model == 'Sarsa':
+            self.model = SarsaModel(self.nob)
 
     def set_user(self, p_id):
         self.user = User(p_id, self.data[p_id])
