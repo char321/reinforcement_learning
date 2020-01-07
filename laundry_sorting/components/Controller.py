@@ -18,23 +18,30 @@ class Controller:
     def __init__(self):
         self.robot = Robot()
         self.dataloader = DataLoader()
-        self.data = self.dataloader.load_sorting_data()
+        self.data = self.dataloader.load_all_data()
         self.baskets = {1: 'white', 3: 'dark', 5: 'colour'}
         # self.baskets = {1: 'whites', 2: 'lights', 3: 'darks', 4: 'brights', 5: 'colours',
         #                 6: 'handwash', 7: 'denims', 8: 'delicates', 9: 'children', 10: 'mixed', 11: 'miscellaneous'}
         self.nob = len(self.baskets)  # number of baskets
         self.mob = 6  # max number of baskets
-        self.model = QLearningModel(self.nob)
+        self.model = QLearningModel(self.nob, self.dataloader.get_colours_full(), self.dataloader.get_types_full())
         self.user = None
+        self.default_policy = None
 
     def set_model(self, model):
         if model == 'QLearning':
-            self.model = QLearningModel(self.nob)
+            self.model = QLearningModel(self.nob, self.dataloader.get_colours_full(), self.dataloader.get_types_full())
         if model == 'Sarsa':
-            self.model = SarsaModel(self.nob)
+            self.model = SarsaModel(self.nob, self.dataloader.get_colours_full(), self.dataloader.get_types_full())
 
     def set_user(self, p_id):
         self.user = User(p_id, self.data[p_id])
+
+    def set_q_table(self, q_table):
+        self.model.set_q_table(q_table)
+
+    def get_q_table(self):
+        return self.model.get_q_table()
 
     def ask_for_label(self, cloth):
         return self.user.guide_label(cloth)
@@ -53,12 +60,23 @@ class Controller:
 
         return label
 
+    def reload_default_policy(self):
+        if not self.default_policy:
+            print('The model has not been trained.')
+        else:
+            self.set_q_table(np.copy(self.default_policy['q']))
+            self.nob = self.default_policy['nob']
+            self.baskets = dict(self.default_policy['baskets']).copy()
+
     def train(self):
         self.model.set_parameters(alpha=0.5, gamma=0.8, epsilon=0.1)
         noi = 10000  # number of iterations
         print('Training...')
 
         self.model.train(noi, self.data, self.baskets)
+
+        # Store default policy
+        self.default_policy = {'q': np.copy(self.get_q_table()), 'nob': self.nob, 'baskets': self.baskets.copy()}
 
     def test_person(self, p_id):
         q_table = self.model.get_q_table()
@@ -84,14 +102,15 @@ class Controller:
         total_accuracy = 0
         for p_id in range(1, 31):
             results = self.test_person(p_id)
-            total_accuracy += (sum(results.values()) / 16) / 30
+            total_accuracy += (sum(results.values()) / len(results)) / 30
 
         print(total_accuracy)
 
     def apply(self, p_id):
         self.model.set_parameters(alpha=0.5, gamma=0.8, epsilon=0.1)
 
-        nop = 500  # number of repeat time for each sorting behaviour
+        nop = 5000  # number of repeat time for each sorting behaviour
+        reward_scale = 2
         print('Applying...')
 
         clothes = self.data[p_id]
@@ -106,9 +125,13 @@ class Controller:
 
             if response:  # correct
                 # TODO - Any action?
-                print('correct')
+                # print('correct')
+                None
             else:  # incorrect
                 asked_label = self.ask_for_label(cloth)
+                if asked_label == 0:
+                    continue
+
                 if asked_label not in self.baskets:
                     # TODO - reference?
                     if self.nob >= self.mob:
@@ -119,11 +142,7 @@ class Controller:
                         print("Add new basket: %d" % asked_label)
 
                         # Extend q_table
-                        q_table = self.model.get_q_table()
-                        q_table = np.insert(q_table, q_table.shape[1],
-                                            values=np.zeros((q_table.shape[0], 1)).transpose(),
-                                            axis=1)
-                        self.model.set_q_table(q_table)
+                        self.model.extend_q_table()
 
             # System update the q-table
-            self.model.train_with_single_action(nop, cloth, self.baskets)
+            self.model.train_with_single_action(nop, cloth, self.baskets, reward_scale)

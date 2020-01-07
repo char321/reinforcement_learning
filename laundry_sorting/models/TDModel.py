@@ -3,20 +3,17 @@ import random
 
 
 class TDModel:
-    def __init__(self, nob):
-
-        # Reward table
-        # There is no actually Reward table, and the reward will be calculated after the action is decided
-
+    def __init__(self, nob, colours, types):
         # Parameters
         self.alpha = 0.5
         self.gamma = 0.8
         self.epsilon = 0.1
 
-        self.colours = ['white', 'black', 'dark', 'colours']
+        self.colours = colours
+        self.types = types
 
-        self.types = ['t-shirt', 'socks', 'polo', 'pants', 'jeans', 'shirt', 'skirt', 'others']
-
+        # Reward table
+        # There is no actually Reward table, and the reward will be calculated after the action is decided
         # Initialise Q-table
         # The number of states = number of colours * number of types
         self.q = np.zeros((len(self.colours) * len(self.types), nob))
@@ -51,6 +48,11 @@ class TDModel:
 
     def set_q_table(self, q_table):
         self.q = q_table
+
+    def extend_q_table(self):
+        q_table = self.get_q_table()
+        self.set_q_table(
+            np.insert(q_table, q_table.shape[1], values=np.zeros((q_table.shape[0], 1)).transpose(), axis=1))
 
     def train(self, noi, data, baskets):
         # Start training
@@ -87,7 +89,7 @@ class TDModel:
                 # Learn
                 self.learn(state, action, reward, next_state)
 
-    def train_with_single_action(self, nop, cloth, baskets):
+    def train_with_single_action(self, nop, cloth, baskets, reward_scale):
         # Start training
         for i in range(nop):
             # Get the state
@@ -97,7 +99,7 @@ class TDModel:
             action = self.get_action(state)
 
             # Get the reward
-            reward = self.get_reward(label=list(baskets.keys())[action], cloth=cloth) * 2
+            reward = self.get_reward(label=list(baskets.keys())[action], cloth=cloth) * reward_scale
 
             next_state = state
             self.learn(state, action, reward, next_state)
