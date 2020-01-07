@@ -68,9 +68,8 @@ class Controller:
             self.nob = self.default_policy['nob']
             self.baskets = dict(self.default_policy['baskets']).copy()
 
-    def train(self):
+    def train(self, noi=10000):
         self.model.set_parameters(alpha=0.5, gamma=0.8, epsilon=0.1)
-        noi = 10000  # number of iterations
         print('Training...')
 
         self.model.train(noi, self.data, self.baskets)
@@ -106,11 +105,8 @@ class Controller:
 
         print(total_accuracy)
 
-    def apply(self, p_id):
-        self.model.set_parameters(alpha=0.5, gamma=0.8, epsilon=0.1)
-
-        nop = 5000  # number of repeat time for each sorting behaviour
-        reward_scale = 2
+    def apply(self, p_id, nop=500, reward_scale=2):
+        self.model.set_parameters(alpha=0.1, gamma=0.5, epsilon=0.1)
         print('Applying...')
 
         clothes = self.data[p_id]
@@ -145,4 +141,9 @@ class Controller:
                         self.model.extend_q_table()
 
             # System update the q-table
+            if i_id in [2, 3, 4, 31]:
+                print(i_id)
+                print(self.get_q_table()[0])
             self.model.train_with_single_action(nop, cloth, self.baskets, reward_scale)
+            if i_id in [2, 3, 4, 31]:
+                print(self.get_q_table()[0])

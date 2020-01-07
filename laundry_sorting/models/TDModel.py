@@ -1,6 +1,6 @@
 import numpy as np
 import random
-
+import pprint
 
 class TDModel:
     def __init__(self, nob, colours, types):
@@ -82,7 +82,7 @@ class TDModel:
 
                 # Choose next label for next cloth
                 next_state = None
-                if i_id < 16:
+                if i_id + 1 in clothes:
                     next_cloth = clothes[i_id + 1]
                     next_state = self.get_state(next_cloth['i_colour'], next_cloth['i_type'])
 

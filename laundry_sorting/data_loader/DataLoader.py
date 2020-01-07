@@ -62,7 +62,7 @@ class DataLoader:
     def map_to_colour_full(self, i_colour):
         if self.isnumber(i_colour):
             return 'colours'
-
+        # TODO - grey
         if 'white' in i_colour:
             return 'white'
         elif 'black' in i_colour:
@@ -127,7 +127,7 @@ class DataLoader:
                     b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
                     # print(i_id)
                     i_colour = self.map_to_colour_simple(item['is_colour'].values[0])
-                    i_type = self.map_to_type_simple(item['is_label'].values[0])
+                    i_type = self.map_to_type_full(item['is_label'].values[0])
                     # print(i_colour)
                     # print(i_type)
                     basket = self.baskets[self.baskets['b_id'] == int(b_id)]
@@ -142,8 +142,8 @@ class DataLoader:
 
             persons[p_id] = clothes
 
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(persons)
+        # pp = pprint.PrettyPrinter(indent=4)
+        # pp.pprint(persons)
 
         return persons
 
@@ -162,8 +162,8 @@ class DataLoader:
                 sort = temp_sorts[temp_sorts['i_id'] == i_id]
                 b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
                 # print(i_id)
-                i_colour = self.map_to_colour_full(sort['s_colour_description'].values[0])
-                i_type = self.map_to_type_full(sort['s_label'].values[0])
+                i_colour = self.map_to_colour_simple(sort['s_colour_description'].values[0])
+                i_type = self.map_to_type_simple(sort['s_label'].values[0])
                 # print(i_colour)
                 # print(i_type)
                 basket = self.baskets[self.baskets['b_id'] == int(b_id)]
@@ -178,8 +178,8 @@ class DataLoader:
 
             persons[p_id] = clothes
 
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(persons)
+        # pp = pprint.PrettyPrinter(indent=4)
+        # pp.pprint(persons)
 
         return persons
 
