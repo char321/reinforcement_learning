@@ -29,6 +29,7 @@ class DataLoader:
         if self.isnumber(i_colour):
             return 'colours'
 
+        # TODO - grey
         if 'white' in i_colour:
             return 'white'
         elif 'black' in i_colour:
@@ -62,6 +63,7 @@ class DataLoader:
     def map_to_colour_full(self, i_colour):
         if self.isnumber(i_colour):
             return 'colours'
+
         # TODO - grey
         if 'white' in i_colour:
             return 'white'
@@ -126,7 +128,7 @@ class DataLoader:
                     sort = temp_sorts[temp_sorts['i_id'] == i_id]
                     b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
                     # print(i_id)
-                    i_colour = self.map_to_colour_simple(item['is_colour'].values[0])
+                    i_colour = self.map_to_colour_full(item['is_colour'].values[0])
                     i_type = self.map_to_type_full(item['is_label'].values[0])
                     # print(i_colour)
                     # print(i_type)
@@ -162,7 +164,7 @@ class DataLoader:
                 sort = temp_sorts[temp_sorts['i_id'] == i_id]
                 b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
                 # print(i_id)
-                i_colour = self.map_to_colour_simple(sort['s_colour_description'].values[0])
+                i_colour = self.map_to_colour_full(sort['s_colour_description'].values[0])
                 i_type = self.map_to_type_simple(sort['s_label'].values[0])
                 # print(i_colour)
                 # print(i_type)
@@ -187,15 +189,18 @@ class DataLoader:
         # TODO
         return
 
-    def get_colours_simple(self):
-        return ['white', 'black', 'dark', 'colours']
+    def get_colours(self):
+        # simple
+        # return ['white', 'black', 'dark', 'colours']
 
-    def get_types_simple(self):
-        return ['t-shirt', 'socks', 'polo', 'pants', 'jeans', 'shirt', 'skirt', 'others']
-
-    def get_colours_full(self):
+        # full
         return ['white', 'black', 'dark', 'light', 'bright', 'colours']
 
-    def get_types_full(self):
+    def get_types(self):
+        # simple
+        # return ['t-shirt', 'socks', 'polo', 'pants', 'jeans', 'shirt', 'skirt', 'others']
+
+        # full
         return ['t-shirt', 'sport', 'top', 'socks', 'polo', 'pants', 'jeans', 'shorts', 'shirt', 'skirt', 'pyjama',
                 'hat', 'baby', 'others']
+

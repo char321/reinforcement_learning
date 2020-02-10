@@ -104,7 +104,6 @@ class TDModel:
             next_state = state
             self.learn(state, action, reward, next_state)
 
-
 class QLearningModel(TDModel):
     def learn(self, state, action, reward, next_state):
         current_q = self.q[state][action]

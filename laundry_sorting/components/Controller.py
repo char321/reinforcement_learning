@@ -24,15 +24,15 @@ class Controller:
         #                 6: 'handwash', 7: 'denims', 8: 'delicates', 9: 'children', 10: 'mixed', 11: 'miscellaneous'}
         self.nob = len(self.baskets)  # number of baskets
         self.mob = 6  # max number of baskets
-        self.model = QLearningModel(self.nob, self.dataloader.get_colours_full(), self.dataloader.get_types_full())
+        self.model = QLearningModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
         self.user = None
         self.default_policy = None
 
     def set_model(self, model):
         if model == 'QLearning':
-            self.model = QLearningModel(self.nob, self.dataloader.get_colours_full(), self.dataloader.get_types_full())
+            self.model = QLearningModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
         if model == 'Sarsa':
-            self.model = SarsaModel(self.nob, self.dataloader.get_colours_full(), self.dataloader.get_types_full())
+            self.model = SarsaModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
 
     def set_user(self, p_id):
         self.user = User(p_id, self.data[p_id])
@@ -141,9 +141,19 @@ class Controller:
                         self.model.extend_q_table()
 
             # System update the q-table
-            if i_id in [2, 3, 4, 31]:
-                print(i_id)
-                print(self.get_q_table()[0])
-            self.model.train_with_single_action(nop, cloth, self.baskets, reward_scale)
-            if i_id in [2, 3, 4, 31]:
-                print(self.get_q_table()[0])
+
+            # # TODO - DELETE
+            state = self.model.get_state(cloth['i_colour'], cloth['i_type'])
+            # if state == 0:
+            #     print(i_id)
+            #     print(response)
+            #     print(cloth['i_colour'] + ' - ' + cloth['i_type'])
+            #     # print(state)
+            #     print(self.get_q_table()[state])
+            self.model.train_with_single_action(nop, cloth, self.baskets, (reward_scale * 3 if response else reward_scale * 1))
+            # if state == 0:
+            #     print(self.get_q_table()[state])
+
+        # print(self.baskets)
+        # print(self.get_q_table()[0])
+        # print(q_table)
