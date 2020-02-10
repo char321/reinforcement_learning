@@ -5,6 +5,7 @@ from models.TDModel import QLearningModel
 from models.TDModel import SarsaModel
 from components.User import User
 from components.Robot import Robot
+from components.Config import Config
 
 
 # persons
@@ -15,7 +16,7 @@ from components.Robot import Robot
 #       - value: clothe sorting information including colour, type, basket id, basket category id, basket labe
 
 class Controller:
-    def __init__(self):
+    def __init__(self, config):
         self.robot = Robot()
         self.dataloader = DataLoader()
         self.data = self.dataloader.load_all_data()
@@ -24,14 +25,15 @@ class Controller:
         #                 6: 'handwash', 7: 'denims', 8: 'delicates', 9: 'children', 10: 'mixed', 11: 'miscellaneous'}
         self.nob = len(self.baskets)  # number of baskets
         self.mob = 6  # max number of baskets
-        self.model = QLearningModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
+        self.config = config
+        self.set_model()
         self.user = None
         self.default_policy = None
 
-    def set_model(self, model):
-        if model == 'QLearning':
+    def set_model(self):
+        if self.config.model == 'QLearning':
             self.model = QLearningModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
-        if model == 'Sarsa':
+        if self.config.model == 'Sarsa':
             self.model = SarsaModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
 
     def set_user(self, p_id):
@@ -68,11 +70,11 @@ class Controller:
             self.nob = self.default_policy['nob']
             self.baskets = dict(self.default_policy['baskets']).copy()
 
-    def train(self, noi=10000):
-        self.model.set_parameters(alpha=0.5, gamma=0.8, epsilon=0.1)
-        print('Training...')
+    def train(self):
+        self.model.set_parameters(self.config.train_alpha, self.config.train_gamma, self.config.train_epsilon)
+        # print('Training...')
 
-        self.model.train(noi, self.data, self.baskets)
+        self.model.train(self.config.noi, self.data, self.baskets)
 
         # Store default policy
         self.default_policy = {'q': np.copy(self.get_q_table()), 'nob': self.nob, 'baskets': self.baskets.copy()}
@@ -93,8 +95,9 @@ class Controller:
             result = 1 if label in correct_label else 0
             results[i_id] = result
 
-        print("Person %s" % str(p_id))
-        print(results)
+        # print("Person %s" % str(p_id))
+        # print(results)
+
         return results
 
     def test_all(self):
@@ -102,12 +105,11 @@ class Controller:
         for p_id in range(1, 31):
             results = self.test_person(p_id)
             total_accuracy += (sum(results.values()) / len(results)) / 30
-
         print(total_accuracy)
 
-    def apply(self, p_id, nop=500, reward_scale=2):
-        self.model.set_parameters(alpha=0.1, gamma=0.5, epsilon=0.1)
-        print('Applying...')
+    def apply(self, p_id):
+        self.model.set_parameters(self.config.update_alpha, self.config.update_gamma, self.config.update_epsilon)
+        # print('Applying...')
 
         clothes = self.data[p_id]
         for i_id in clothes:
@@ -131,11 +133,14 @@ class Controller:
                 if asked_label not in self.baskets:
                     # TODO - reference?
                     if self.nob >= self.mob:
-                        print("Already achieve maximum number of baskets!")
+
+                        # print("Already achieve maximum number of baskets!")
+                        None
                     else:
                         self.baskets = self.robot.add_new_label(asked_label, self.baskets)
                         self.nob += 1
-                        print("Add new basket: %d" % asked_label)
+
+                        # print("Add new basket: %d" % asked_label)
 
                         # Extend q_table
                         self.model.extend_q_table()
@@ -150,7 +155,8 @@ class Controller:
             #     print(cloth['i_colour'] + ' - ' + cloth['i_type'])
             #     # print(state)
             #     print(self.get_q_table()[state])
-            self.model.train_with_single_action(nop, cloth, self.baskets, (reward_scale * 3 if response else reward_scale * 1))
+            self.model.train_with_single_action(self.config.nop, cloth, self.baskets, (
+                self.config.correct_scale if response else self.config.incorrect_reward))
             # if state == 0:
             #     print(self.get_q_table()[state])
 

@@ -1,18 +1,21 @@
 from components.Controller import Controller
+from components.Config import Config
 import numpy as np
+import pandas as pd
 import pprint
 
-def test_all(model):
+
+def test_all():
     controller = Controller()
-    controller.set_model(model)
+
     controller.train()
     controller.test_all()
     print(controller.get_q_table())
 
 
-def apply_person(model, p_id, noi, nop, reward_scale):
+def apply_person(p_id):
     controller = Controller()
-    controller.set_model(model)
+
     controller.train()
     controller.test_person(p_id)
     # print(controller.get_q_table())
@@ -20,37 +23,102 @@ def apply_person(model, p_id, noi, nop, reward_scale):
     # pp.pprint(controller.data[p_id])
 
     controller.set_user(p_id)
-    controller.apply(p_id, 50, 1)
+    controller.apply(p_id)
     controller.test_person(p_id)
     # print(controller.get_q_table())
 
-def apply_all(model, noi, nop, reward_scale):
-    controller = Controller()
-    controller.set_model(model)
 
-    controller.train(noi)
+def apply_all(config):
+    controller = Controller(config)
+
+    controller.train()
     q_table = np.copy(controller.get_q_table())
+    before_total_accuracy = 0
+    before_list = []
+    for p_id in range(1, 31):
+        controller.reload_default_policy()
+        results = controller.test_person(p_id)
+        before_total_accuracy += (sum(results.values()) / len(results)) / 30
+        before_list.append(round(sum(results.values()) / len(results), 3))
 
-    total_accuracy = 0
+    # print(before_total_accuracy)
+
+    after_total_accuracy = 0
+    after_list = []
     for p_id in range(1, 31):
         controller.reload_default_policy()
         controller.set_user(p_id)
-        controller.apply(p_id, nop, reward_scale)
+        controller.apply(p_id)
         results = controller.test_person(p_id)
-        total_accuracy += (sum(results.values()) / len(results)) / 30
-    print(total_accuracy)
+        after_total_accuracy += (sum(results.values()) / len(results)) / 30
+        after_list.append(round(sum(results.values()) / len(results), 3))
+        # print(sum(results.values()) / len(results))
+
+    # print(after_list)
+    # print(after_total_accuracy)
+    return [before_total_accuracy, after_total_accuracy, after_list, min(after_list), max(after_list)]
+
+
+def tuning():
+    config = Config()
+    result = pd.DataFrame(columns=('idx', 'parameter', 'ac1', 'ac2', 'all_ac', 'min', 'max'))
+    id = 0
+    for parameter_list in config.combinations:
+        print(parameter_list)
+        config.set_parameters(parameter_list)
+        [ac1, ac2, all_ac, mi, ma] = apply_all(config)
+        data = pd.DataFrame(
+            {'idx': id, 'parameter': str(parameter_list), 'ac1': ac1, 'ac2': ac2, 'all_ac': str(all_ac), 'min': mi, 'max': ma},
+            index=[0])
+        result = result.append(data, ignore_index=True)
+        id += 1
+
+    csv_filename = 'result.csv'
+    result.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
+
+def tuning2():
+    config = Config()
+    result = pd.DataFrame(columns=('idx', 'parameter', 'ac1', 'ac2'))
+    id = 0
+    for parameter_list in config.combinations:
+        print('combination ' + str(id + 1))
+        print(parameter_list)
+        config.set_parameters(parameter_list)
+
+        total_ac1, total_ac2 = 0, 0
+        for i in range(5):
+            [ac1, ac2, all_ac, mi, ma] = apply_all(config)
+            total_ac1 += ac1
+            total_ac2 += ac2
+
+        print(total_ac1 / 10)
+        print(total_ac2 / 10)
+        data = pd.DataFrame(
+            {'idx': id, 'parameter': str(parameter_list), 'ac1': total_ac1 / 10, 'ac2': total_ac2 / 10},
+            index=[0])
+        result = result.append(data, ignore_index=True)
+        id += 1
+
+    csv_filename = 'result.csv'
+    result.to_csv(csv_filename, float_format='%.5f', index=True, header=True)
 
 def main():
     p_id = 3
-    model = 'Sarsa'
 
-    # apply_person(model, p_id, 10000, 50, 1)
-    apply_all(model, 10000, 50, 2)
+    # apply_person(model, p_id)
+
+    # apply_all()
+
+    tuning2()
+
+    # test = Config()
+    # print(test.number_of_combinations)
     # TODO - for some person: 2, 3, 4 are all wrong BUG ???
     # later same type items is categoried into other bucket
     # TODO - temp solution: 1.set alpha & beta when updating
     #                       2.record the clothes and shuffle them to update
     #                       3.set train time and reward_scale according to TRUE / FALSE
+
 
 if '__main__' == __name__:
     main()
