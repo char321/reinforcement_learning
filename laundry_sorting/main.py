@@ -101,6 +101,7 @@ def tuning2():
 
     csv_filename = 'result.csv'
     result.to_csv(csv_filename, float_format='%.5f', index=True, header=True)
+    # print(result)
 
 def main():
     p_id = 3
