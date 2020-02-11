@@ -7,17 +7,8 @@ class Config:
         self.noi_list = [10000]  # [1000, 10000, 20000, 50000]
         self.nop_list = [50, 100, 500]
         self.reward_scale_list = [1, 2, 5]
+        self.train_alpha_list = [0.5, 0.7]
         self.alpha_list = [0.1, 0.3, 0.5, 0.7]
-        self.gamma_list = [0]  # [0, 0.3, 0.5, 0.7]
-        self.epsilon_list = [0.1]  # [0.1, 0.2]
-        self.correct_scale_list = [1, 2, 3, 5]  # [1, 2, 3, 5, 10]
-        self.incorrect_scale_list = [0.5, 1]  # [0.5, 1, 2, 3]
-
-        self.model_list = ['Sarsa', 'QLearning']
-        self.noi_list = [10000]  # [1000, 10000, 20000, 50000]
-        self.nop_list = [50, 100]
-        self.reward_scale_list = [1, 2]
-        self.alpha_list = [0.3, 0.5, 0.7]
         self.gamma_list = [0]  # [0, 0.3, 0.5, 0.7]
         self.epsilon_list = [0.1]  # [0.1, 0.2]
         self.correct_scale_list = [1, 3, 5]  # [1, 2, 3, 5, 10]
@@ -49,7 +40,7 @@ class Config:
                                                    self.noi_list,
                                                    self.nop_list,
                                                    self.reward_scale_list,
-                                                   self.alpha_list,
+                                                   self.train_alpha_list,
                                                    self.gamma_list,
                                                    self.epsilon_list,
                                                    self.alpha_list,

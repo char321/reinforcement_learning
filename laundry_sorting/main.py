@@ -91,15 +91,15 @@ def tuning2():
             total_ac1 += ac1
             total_ac2 += ac2
 
-        print(total_ac1 / 10)
-        print(total_ac2 / 10)
+        print(total_ac1 / 5)
+        print(total_ac2 / 5)
         data = pd.DataFrame(
-            {'idx': id, 'parameter': str(parameter_list), 'ac1': total_ac1 / 10, 'ac2': total_ac2 / 10},
+            {'idx': id, 'parameter': str(parameter_list), 'ac1': total_ac1 / 5, 'ac2': total_ac2 / 5},
             index=[0])
         result = result.append(data, ignore_index=True)
         id += 1
 
-    csv_filename = 'result.csv'
+    csv_filename = 'result2.csv'
     result.to_csv(csv_filename, float_format='%.5f', index=True, header=True)
     # print(result)
 
