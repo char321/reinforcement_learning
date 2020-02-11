@@ -3,7 +3,7 @@ import random
 import pprint
 
 class TDModel:
-    def __init__(self, nob, colours, types):
+    def __init__(self, nob, colours, types, num):
         # Parameters
         self.alpha = 0.5
         self.gamma = 0.8
@@ -11,6 +11,7 @@ class TDModel:
 
         self.colours = colours
         self.types = types
+        self.num = num
 
         # Reward table
         # There is no actually Reward table, and the reward will be calculated after the action is decided
@@ -54,8 +55,11 @@ class TDModel:
         self.set_q_table(
             np.insert(q_table, q_table.shape[1], values=np.zeros((q_table.shape[0], 1)).transpose(), axis=1))
 
-    def train(self, noi, data, baskets):
+    def train(self, noi, data, baskets, interval):
         # Start training
+        acc = []
+        xs = []
+
         for i in range(noi):
             # Choose a random people
             p_id = random.randint(1, 30)
@@ -89,6 +93,12 @@ class TDModel:
                 # Learn
                 self.learn(state, action, reward, next_state)
 
+            if i > 0 and i % interval == 0:
+                acc.append(self.test(data, baskets))
+                xs.append(i)
+
+        return [acc, xs]
+
     def train_with_single_action(self, nop, cloth, baskets, reward_scale):
         # Start training
         for i in range(nop):
@@ -103,6 +113,31 @@ class TDModel:
 
             next_state = state
             self.learn(state, action, reward, next_state)
+
+    def test(self, data, baskets):
+        total_accuracy = 0
+        for p_id in range(1, self.num + 1):
+            clothes = data[p_id]
+            results = {}
+            for i_id in clothes.keys():
+                cloth = clothes[i_id]
+                correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
+
+                i_colour = cloth['i_colour']
+                i_type = cloth['i_type']
+                colour_index = self.colours.index(i_colour)
+                type_index = self.types.index(i_type)
+                state = colour_index * len(self.types) + type_index
+
+                actions = self.q[state]
+                action = np.argmax(actions)
+                label = list(baskets)[action]
+
+                result = 1 if label in correct_label else 0
+                results[i_id] = result
+
+            total_accuracy += (sum(results.values()) / len(results)) / 30
+        return total_accuracy
 
 class QLearningModel(TDModel):
     def learn(self, state, action, reward, next_state):

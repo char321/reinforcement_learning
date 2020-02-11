@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from data_loader.DataLoader import DataLoader
 from models.TDModel import QLearningModel
 from models.TDModel import SarsaModel
@@ -32,9 +33,11 @@ class Controller:
 
     def set_model(self):
         if self.config.model == 'QLearning':
-            self.model = QLearningModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
+            self.model = QLearningModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types(),
+                                        self.config.num)
         if self.config.model == 'Sarsa':
-            self.model = SarsaModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types())
+            self.model = SarsaModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types(),
+                                    self.config.num)
 
     def set_user(self, p_id):
         self.user = User(p_id, self.data[p_id])
@@ -74,10 +77,12 @@ class Controller:
         self.model.set_parameters(self.config.train_alpha, self.config.train_gamma, self.config.train_epsilon)
         # print('Training...')
 
-        self.model.train(self.config.noi, self.data, self.baskets)
+        results = self.model.train(self.config.noi, self.data, self.baskets, 10)
 
         # Store default policy
         self.default_policy = {'q': np.copy(self.get_q_table()), 'nob': self.nob, 'baskets': self.baskets.copy()}
+
+        self.plot_image(results[0], results[1])
 
     def test_person(self, p_id):
         q_table = self.model.get_q_table()
@@ -163,3 +168,12 @@ class Controller:
         # print(self.baskets)
         # print(self.get_q_table()[0])
         # print(q_table)
+
+    def plot_image(self, ys, xs):
+        plt.axis([0, self.config.noi, 0, 1])
+        plt.plot(xs, ys)
+        plt.xlabel('Iteration Time')
+        plt.ylabel('Accuracy')
+        plt.title(self.config.model + 'with\n' + 'alpha: ' + str(self.config.train_alpha) + ' gamma: ' + str(
+            self.config.train_gamma) + ' epsilon: ' + str(self.config.train_epsilon))
+        plt.savefig('result.png')

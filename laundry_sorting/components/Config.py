@@ -3,8 +3,10 @@ import itertools
 
 class Config:
     def __init__(self):
+        self.num = 30
+
         self.model_list = ['Sarsa', 'QLearning']
-        self.noi_list = [10000]  # [1000, 10000, 20000, 50000]
+        self.noi_list = [2000]  # [1000, 10000, 20000, 50000]
         self.nop_list = [50, 100, 500]
         self.reward_scale_list = [1, 2, 5]
         self.alpha_list = [0.1, 0.3, 0.5, 0.7]
@@ -14,7 +16,7 @@ class Config:
         self.incorrect_scale_list = [0.5, 1]  # [0.5, 1, 2, 3]
 
         self.model_list = ['Sarsa', 'QLearning']
-        self.noi_list = [10000]  # [1000, 10000, 20000, 50000]
+        self.noi_list = [2000]  # [1000, 10000, 20000, 50000]
         self.nop_list = [50, 100]
         self.reward_scale_list = [1, 2]
         self.alpha_list = [0.3, 0.5, 0.7]
@@ -28,7 +30,7 @@ class Config:
         # TODO - gamma = 0?
 
         # Training
-        self.noi = 10000
+        self.noi = 2000
         self.reward_scale = 2
         self.train_alpha = 0.1
         self.train_gamma = 0

@@ -106,11 +106,14 @@ def tuning2():
 def main():
     p_id = 3
 
+    controller = Controller(Config())
+    controller.train()
+
     # apply_person(model, p_id)
 
     # apply_all()
 
-    tuning2()
+    # tuning2()
 
     # test = Config()
     # print(test.number_of_combinations)
