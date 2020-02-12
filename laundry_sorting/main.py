@@ -14,7 +14,7 @@ def test_all():
 
 
 def apply_person(p_id):
-    controller = Controller()
+    controller = Controller(Config())
 
     controller.train()
     controller.test_person(p_id)
@@ -28,8 +28,8 @@ def apply_person(p_id):
     # print(controller.get_q_table())
 
 
-def apply_all(config):
-    controller = Controller(config)
+def apply_all():
+    controller = Controller(Config())
 
     controller.train()
     q_table = np.copy(controller.get_q_table())
@@ -104,14 +104,14 @@ def tuning2():
     # print(result)
 
 def main():
-    p_id = 3
+    p_id = 1
 
-    controller = Controller(Config())
-    controller.train()
+    # controller = Controller(Config())
+    # controller.train()
 
-    # apply_person(model, p_id)
+    # apply_person(p_id)
 
-    # apply_all()
+    apply_all()
 
     # tuning2()
 

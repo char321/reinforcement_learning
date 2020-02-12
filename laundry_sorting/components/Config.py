@@ -26,12 +26,12 @@ class Config:
         self.incorrect_scale_list = [0.5, 1]  # [0.5, 1, 2, 3]
 
         # Model
-        self.model = self.model_list[1]
+        self.model = self.model_list[0]
         # TODO - gamma = 0?
 
         # Training
         self.noi = 2000
-        self.reward_scale = 2
+        self.reward_scale = 1
         self.train_alpha = 0.1
         self.train_gamma = 0
         self.train_epsilon = 0.1

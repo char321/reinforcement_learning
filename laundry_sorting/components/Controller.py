@@ -82,7 +82,12 @@ class Controller:
         # Store default policy
         self.default_policy = {'q': np.copy(self.get_q_table()), 'nob': self.nob, 'baskets': self.baskets.copy()}
 
-        self.plot_image(results[0], results[1])
+        title = self.config.model + ' with\n' + 'alpha: ' + str(self.config.train_alpha) + ' gamma: ' + str(
+            self.config.train_gamma) + ' epsilon: ' + str(self.config.train_epsilon)
+        name = self.config.model + '_alpha' + str(self.config.train_alpha) + '_gamma' + str(
+            self.config.train_gamma) + '_epsilon' + str(self.config.train_epsilon)
+
+        self.plot_image(results[0], results[1], self.config.noi, title, name)
 
     def test_person(self, p_id):
         q_table = self.model.get_q_table()
@@ -116,6 +121,9 @@ class Controller:
         self.model.set_parameters(self.config.update_alpha, self.config.update_gamma, self.config.update_epsilon)
         # print('Applying...')
 
+        acc = []
+        xs = []
+        count = 1
         clothes = self.data[p_id]
         for i_id in clothes:
             cloth = clothes[i_id]
@@ -165,15 +173,30 @@ class Controller:
             # if state == 0:
             #     print(self.get_q_table()[state])
 
+            # TODO
+            # test_result = self.test_person(p_id)
+            result = self.test_person(p_id)
+            acc.append(sum(result.values()) / len(result))
+            xs.append(count)
+            count += 1
+
+        title = 'Updated ' + str(p_id) + ' using ' + self.config.model + ' with\n' + 'alpha: ' + str(self.config.update_alpha) + ' gamma: ' + str(
+            self.config.update_gamma) + ' epsilon: ' + str(self.config.update_epsilon)
+        name = 'Updated_' + str(p_id) + '_' + self.config.model + '_alpha' + str(self.config.update_alpha) + '_gamma' + str(
+            self.config.update_gamma) + '_epsilon' + str(self.config.update_epsilon)
+        self.plot_image(acc, xs, len(clothes), title, name)
+        print(acc)
+        print(xs)
         # print(self.baskets)
         # print(self.get_q_table()[0])
         # print(q_table)
 
-    def plot_image(self, ys, xs):
-        plt.axis([0, self.config.noi, 0, 1])
+    def plot_image(self, ys, xs, x_axis, title, name):
+        plt.figure()
+        plt.axis([0, x_axis, 0, 1])
         plt.plot(xs, ys)
         plt.xlabel('Iteration Time')
         plt.ylabel('Accuracy')
-        plt.title(self.config.model + 'with\n' + 'alpha: ' + str(self.config.train_alpha) + ' gamma: ' + str(
-            self.config.train_gamma) + ' epsilon: ' + str(self.config.train_epsilon))
-        plt.savefig('result.png')
+        plt.title(title)
+        plt.savefig(name + '.png')
+        plt.close()
