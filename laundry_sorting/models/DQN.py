@@ -1,138 +1,91 @@
-import tensorflow as tf
+import gym
 import numpy as np
-import random
-from collections import deque
+import tensorflow as tf
+from models.Memory import *
 
-# Hyper Parameters for DQN
-GAMMA = 0.9  # discount factor for target Q
-INITIAL_EPSILON = 0.5  # starting value of epsilon
-FINAL_EPSILON = 0.01  # final value of epsilon
-REPLAY_SIZE = 1  # experience replay buffer size
-BATCH_SIZE = 32  # size of minibatch
+
+initializer_helper = {
+    'kernel_initializer': tf.random_normal_initializer(0., 0.3),
+    'bias_initializer': tf.constant_initializer(0.1)
+}
 
 
 class DQN:
-    # DQN Agent
-    def __init__(self, state_dim, action_dim):
-        # init experience replay
-        self.replay_buffer = deque()
-        # init some parameters
-        self.time_step = 0
-        self.epsilon = INITIAL_EPSILON
-        self.state_dim = state_dim
-        self.action_dim = action_dim
+    def __init__(self, sess, s_dim, a_dim, batch_size, gamma, lr, epsilon, replace_target_iter):
+        self.sess = sess
+        self.s_dim = s_dim  # 状态维度
+        self.a_dim = a_dim  # one hot行为维度
+        self.gamma = gamma
+        self.lr = lr  # learning rate
+        self.epsilon = epsilon  # epsilon-greedy
+        self.replace_target_iter = replace_target_iter  # 经历C步后更新target参数
 
-        self.create_Q_network()
-        self.create_training_method()
+        self.memory = Memory(batch_size, 10000)
+        self._learn_step_counter = 0
+        self._generate_model()
 
-        # Init session
-        self.session = tf.InteractiveSession()
-        self.session.run(tf.initialize_all_variables())
-
-        # loading networks
-
-        # self.saver = tf.train.Saver()
-        # checkpoint = tf.train.get_checkpoint_state("saved_networks")
-        # if checkpoint and checkpoint.model_checkpoint_path:
-        #     self.saver.restore(self.session, checkpoint.model_checkpoint_path)
-        #     print("Successfully loaded:", checkpoint.model_checkpoint_path)
-        # else:
-        #     print("Could not find old network weights")
-        #
-        # global summary_writer
-        # summary_writer = tf.train.SummaryWriter('~/logs', graph=self.session.graph)
-
-    def create_Q_network(self):
-        # network weights
-        W1 = self.weight_variable([self.state_dim, 20])
-        b1 = self.bias_variable([20])
-        W2 = self.weight_variable([20, self.action_dim])
-        b2 = self.bias_variable([self.action_dim])
-        # input layer
-        self.state_input = tf.placeholder("float", [None, self.state_dim])
-        # hidden layers
-        h_layer = tf.nn.relu(tf.matmul(self.state_input, W1) + b1)
-        # Q Value layer
-        self.Q_value = tf.matmul(h_layer, W2) + b2
-
-    def create_training_method(self):
-        self.action_input = tf.placeholder("float", [None, self.action_dim])  # one hot presentation
-        self.y_input = tf.placeholder("float", [None])
-        Q_action = tf.reduce_sum(tf.mul(self.Q_value, self.action_input), reduction_indices=1)
-        self.cost = tf.reduce_mean(tf.square(self.y_input - Q_action))
-        tf.scalar_summary("loss", self.cost)
-        global merged_summary_op
-        merged_summary_op = tf.merge_all_summaries()
-        self.optimizer = tf.train.AdamOptimizer(0.0001).minimize(self.cost)
-
-    def perceive(self, state, action, reward, next_state, done):
-        one_hot_action = np.zeros(self.action_dim)
-        one_hot_action[action] = 1
-        self.replay_buffer.append((state, one_hot_action, reward, next_state, done))
-        if len(self.replay_buffer) > REPLAY_SIZE:
-            self.replay_buffer.popleft()
-
-        if len(self.replay_buffer) > BATCH_SIZE:
-            self.train_Q_network()
-
-    def train_Q_network(self):
-        self.time_step += 1
-        # Step 1: obtain random minibatch from replay memory
-        minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
-        state_batch = [data[0] for data in minibatch]
-        action_batch = [data[1] for data in minibatch]
-        reward_batch = [data[2] for data in minibatch]
-        next_state_batch = [data[3] for data in minibatch]
-
-        # Step 2: calculate y
-        y_batch = []
-        Q_value_batch = self.Q_value.eval(feed_dict={self.state_input: next_state_batch})
-        for i in range(0, BATCH_SIZE):
-            done = minibatch[i][4]
-            if done:
-                y_batch.append(reward_batch[i])
-            else:
-                y_batch.append(reward_batch[i] + GAMMA * np.max(Q_value_batch[i]))
-
-        self.optimizer.run(feed_dict={
-            self.y_input: y_batch,
-            self.action_input: action_batch,
-            self.state_input: state_batch
-        })
-
-        summary_str = self.session.run(merged_summary_op, feed_dict={
-            self.y_input: y_batch,
-            self.action_input: action_batch,
-            self.state_input: state_batch
-        })
-
-        # summary_writer.add_summary(summary_str, self.time_step)
-
-        # save network every 1000 iteration
-
-        # if self.time_step % 1000 == 0:
-        #     self.saver.save(self.session, 'saved_networks/' + 'network' + '-dqn', global_step=self.time_step)
-
-    def egreedy_action(self, state):
-        Q_value = self.Q_value.eval(feed_dict={
-            self.state_input: [state]
-        })[0]
-        if random.random() <= self.epsilon:
-            return random.randint(0, self.action_dim - 1)
+    def choose_action(self, s):
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(self.a_dim)
         else:
-            return np.argmax(Q_value)
+            q_eval_z = self.sess.run(self.q_eval_z, feed_dict={
+                self.s: s[np.newaxis, :]
+            })
+            return q_eval_z.squeeze().argmax()
 
-        self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / 10000
+    def _generate_model(self):
+        self.s = tf.placeholder(tf.float32, shape=(None, self.s_dim), name='s')
+        self.a = tf.placeholder(tf.float32, shape=(None, self.a_dim), name='a')
+        self.r = tf.placeholder(tf.float32, shape=(None, 1), name='r')
+        self.s_ = tf.placeholder(tf.float32, shape=(None, self.s_dim), name='s_')
+        self.done = tf.placeholder(tf.float32, shape=(None, 1), name='done')
 
-    def action(self, state):
-        return np.argmax(self.Q_value.eval(feed_dict={
-            self.state_input: [state]
-        })[0])
+        self.q_eval_z = self._build_net(self.s, 'eval_net', True)
+        self.q_target_z = self._build_net(self.s_, 'target_net', False)
 
-    def weight_variable(self, shape):
-        initial = tf.truncated_normal(shape)
-        return tf.Variable(initial)
+        # y = r + gamma * max(q^)
+        q_target = self.r + self.gamma \
+            * tf.reduce_max(self.q_target_z, axis=1, keepdims=True) * (1 - self.done)
 
-    def bias_variable(self, shape):
-        initial = tf.constant(0.01, shape=shape)
-        return tf.Variable(initial)
+        q_eval = tf.reduce_sum(self.a * self.q_eval_z, axis=1, keepdims=True)
+        # a_mask = tf.cast(self.a, tf.bool)
+        # q_eval = tf.expand_dims(tf.boolean_mask(self.q_eval_z, a_mask), 1)
+
+        self.loss = tf.reduce_mean(tf.squared_difference(q_target, q_eval))
+        self.optimizer = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
+
+        param_target = tf.global_variables(scope='target_net')
+        param_eval = tf.global_variables(scope='eval_net')
+
+        # 将eval网络参数复制给target网络
+        self.target_replace_ops = [tf.assign(t, e) for t, e in zip(param_target, param_eval)]
+
+    def _build_net(self, s, scope, trainable):
+        with tf.variable_scope(scope):
+            l = tf.layers.dense(s, 20, activation=tf.nn.relu, trainable=trainable, ** initializer_helper)
+            q_z = tf.layers.dense(l, self.a_dim, trainable=trainable, **initializer_helper)
+
+        return q_z
+
+    def store_transition_and_learn(self, s, a, r, s_, done):
+        if self._learn_step_counter % self.replace_target_iter == 0:
+            self.sess.run(self.target_replace_ops)
+
+        # 将行为转换为one hot形式
+        one_hot_action = np.zeros(self.a_dim)
+        one_hot_action[a] = 1
+
+        self.memory.store_transition(s, one_hot_action, [r], s_, [done])
+        self._learn()
+        self._learn_step_counter += 1
+
+    def _learn(self):
+        s, a, r, s_, done = self.memory.get_mini_batches()
+
+        loss, _ = self.sess.run([self.loss, self.optimizer], feed_dict={
+            self.s: s,
+            self.a: a,
+            self.r: r,
+            self.s_: s_,
+            self.done: done
+        })

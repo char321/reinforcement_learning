@@ -124,8 +124,9 @@ def main():
 
 
 def test():
-    dataloader = DataLoader()
-    dataloader.load_images()
+    controller = Controller(Config())
+
+    controller.train_with_dqn()
 
 if '__main__' == __name__:
     # main()

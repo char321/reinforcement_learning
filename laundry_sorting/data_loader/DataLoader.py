@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import os
 import cv2
 import pprint
@@ -192,7 +193,7 @@ class DataLoader:
         p_ids = set(self.sorts['p_id'])
 
         n = {}
-        for p_id in p_ids:
+        for p_id in [1]:
 
             temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
             i_ids = temp_sorts['i_id']
@@ -208,15 +209,20 @@ class DataLoader:
                 image_path = self.base_path + '/images/' + image_name
                 img = cv2.imread(image_path)
 
-                # print(image_name)
                 if img is None:
                     n[str(i_id)] = image_path
+                else:
+                    # TODO - JUST FOR TEST
+                    img = np.array(img)
+                    img = img[:10][:10][0]
+                    img = img[:20]
+                    img = img.reshape((1, 60))
 
-                clothes[int(i_id)] = img
+                    clothes[int(i_id)] = img
 
             persons[p_id] = clothes
             # n[p_id] = temp
-        print(clothes)
+        return clothes
         # print(n)
         # pp = pprint.PrettyPrinter(indent=4)
         # pp.pprint(persons)

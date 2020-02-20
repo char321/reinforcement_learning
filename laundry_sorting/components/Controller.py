@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 import os
 import matplotlib.pyplot as plt
 from data_loader.DataLoader import DataLoader
@@ -41,11 +42,6 @@ class Controller:
         if self.config.model == 'Sarsa':
             self.model = SarsaModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types(),
                                     self.config.num)
-        if self.config.model == 'DQN':
-            # TODO
-            state_dim = 1
-            action_dim = 1
-            self.model = DQN(state_dim=state_dim, action_dim=action_dim)
 
     def set_user(self, p_id):
         self.user = User(p_id, self.data[p_id])
@@ -189,9 +185,11 @@ class Controller:
             xs.append(count)
             count += 1
 
-        title = 'Updated ' + str(p_id) + ' using ' + self.config.model + ' with\n' + 'alpha: ' + str(self.config.update_alpha) + ' gamma: ' + str(
+        title = 'Updated ' + str(p_id) + ' using ' + self.config.model + ' with\n' + 'alpha: ' + str(
+            self.config.update_alpha) + ' gamma: ' + str(
             self.config.update_gamma) + ' epsilon: ' + str(self.config.update_epsilon)
-        name = 'Updated_' + str(p_id) + '_' + self.config.model + '_alpha' + str(self.config.update_alpha) + '_gamma' + str(
+        name = 'Updated_' + str(p_id) + '_' + self.config.model + '_alpha' + str(
+            self.config.update_alpha) + '_gamma' + str(
             self.config.update_gamma) + '_epsilon' + str(self.config.update_epsilon)
 
         # plot
@@ -210,3 +208,63 @@ class Controller:
         plt.title(title)
         plt.savefig(self.path + name + '.png')
         plt.close()
+
+    def train_with_dqn(self):
+        images = self.dataloader.load_images()
+        clothes = self.data[1]
+        del(clothes[5])
+        del (clothes[6])
+
+        with tf.Session() as sess:
+            rl = DQN(
+                sess=sess,
+                s_dim=self.config.state_dim,
+                a_dim=len(self.baskets),
+                batch_size=1,
+                gamma=0.99,
+                lr=0.01,
+                epsilon=0.1,
+                replace_target_iter=300
+            )
+            tf.global_variables_initializer().run()
+
+            rs = []
+            for i_episode in range(1000):
+
+                count = 0
+                for i_id in clothes.keys():
+
+                    cloth = clothes[i_id]
+                    state = images[i_id][0]
+                    count += 1
+
+                    # print(state)
+                    r_sum = 0
+                # while True:
+
+                    action = rl.choose_action(state)
+                    # print(action)
+                    next_state = state
+                    if count < len(images) - 2:
+                        # print('i_id')
+                        # print(i_id)
+                        temp_id = list(clothes.keys())[count]
+                        # print(temp_id)
+                        next_state = images[temp_id][0]
+
+                    basket_key = list(self.baskets.keys())[action]
+                    correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
+                    reward = 1 if basket_key in correct_label else -1
+                    print(reward)
+
+                    done = False
+
+                    rl.store_transition_and_learn(state, action, reward, next_state, done)
+
+                    r_sum += 1
+                    if done:
+                        print(i_episode, r_sum)
+                        rs.append(r_sum)
+                        break
+
+            print('mean', np.mean(rs))

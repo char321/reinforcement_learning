@@ -5,7 +5,7 @@ class Config:
     def __init__(self):
         self.num = 30
 
-        self.model_list = ['Sarsa', 'QLearning']
+        self.model_list = ['Sarsa', 'QLearning', 'DQN']
         self.noi_list = [2000]  # [1000, 10000, 20000, 50000]
         self.nop_list = [50, 100, 500]
         self.reward_scale_list = [1, 2, 5]
@@ -16,7 +16,7 @@ class Config:
         self.correct_scale_list = [1, 2, 3, 5]  # [1, 2, 3, 5, 10]
         self.incorrect_scale_list = [0.5, 1]  # [0.5, 1, 2, 3]
 
-        self.model_list = ['Sarsa', 'QLearning']
+        self.model_list = ['Sarsa', 'QLearning', 'DQN']
         self.noi_list = [2000]  # [1000, 10000, 20000, 50000]
         self.nop_list = [50]
         self.reward_scale_list = [1]
@@ -27,8 +27,11 @@ class Config:
         self.correct_scale_list = [1, 2, 3, 5]  # [1, 2, 3, 5, 10]
         self.incorrect_scale_list = [0.5, 1, 2]  # [0.5, 1, 2, 3]
 
+        # TODO - parameter for DQN
+        self.state_dim = 60
+
         # Model
-        self.model = self.model_list[0]
+        self.model = self.model_list[2]
         # TODO - gamma = 0?
 
         # Training
