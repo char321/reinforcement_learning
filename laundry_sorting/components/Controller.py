@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from data_loader.DataLoader import DataLoader
 from models.TDModel import QLearningModel
 from models.TDModel import SarsaModel
+from models.DQN import DQN
 from components.User import User
 from components.Robot import Robot
 from components.Config import Config
@@ -27,6 +29,7 @@ class Controller:
         self.nob = len(self.baskets)  # number of baskets
         self.mob = 6  # max number of baskets
         self.config = config
+        self.path = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/results/'
         self.set_model()
         self.user = None
         self.default_policy = None
@@ -38,6 +41,11 @@ class Controller:
         if self.config.model == 'Sarsa':
             self.model = SarsaModel(self.nob, self.dataloader.get_colours(), self.dataloader.get_types(),
                                     self.config.num)
+        if self.config.model == 'DQN':
+            # TODO
+            state_dim = 1
+            action_dim = 1
+            self.model = DQN(state_dim=state_dim, action_dim=action_dim)
 
     def set_user(self, p_id):
         self.user = User(p_id, self.data[p_id])
@@ -87,7 +95,8 @@ class Controller:
         name = self.config.model + '_alpha' + str(self.config.train_alpha) + '_gamma' + str(
             self.config.train_gamma) + '_epsilon' + str(self.config.train_epsilon)
 
-        self.plot_image(results[0], results[1], self.config.noi, title, name)
+        # plot
+        # self.plot_image(results[0], results[1], self.config.noi, title, name)
 
     def test_person(self, p_id):
         q_table = self.model.get_q_table()
@@ -184,9 +193,10 @@ class Controller:
             self.config.update_gamma) + ' epsilon: ' + str(self.config.update_epsilon)
         name = 'Updated_' + str(p_id) + '_' + self.config.model + '_alpha' + str(self.config.update_alpha) + '_gamma' + str(
             self.config.update_gamma) + '_epsilon' + str(self.config.update_epsilon)
-        self.plot_image(acc, xs, len(clothes), title, name)
-        print(acc)
-        print(xs)
+
+        # plot
+        # self.plot_image(acc, xs, len(clothes), title, name)
+
         # print(self.baskets)
         # print(self.get_q_table()[0])
         # print(q_table)
@@ -198,5 +208,5 @@ class Controller:
         plt.xlabel('Iteration Time')
         plt.ylabel('Accuracy')
         plt.title(title)
-        plt.savefig(name + '.png')
+        plt.savefig(self.path + name + '.png')
         plt.close()

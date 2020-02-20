@@ -3,7 +3,7 @@ from components.Config import Config
 import numpy as np
 import pandas as pd
 import pprint
-
+from data_loader.DataLoader import DataLoader
 
 def test_all():
     controller = Controller()
@@ -28,8 +28,8 @@ def apply_person(p_id):
     # print(controller.get_q_table())
 
 
-def apply_all():
-    controller = Controller(Config())
+def apply_all(config):
+    controller = Controller(config)
 
     controller.train()
     q_table = np.copy(controller.get_q_table())
@@ -61,20 +61,13 @@ def apply_all():
 
 def tuning():
     config = Config()
-    result = pd.DataFrame(columns=('idx', 'parameter', 'ac1', 'ac2', 'all_ac', 'min', 'max'))
-    id = 0
+    controller = Controller(config)
+
     for parameter_list in config.combinations:
         print(parameter_list)
         config.set_parameters(parameter_list)
-        [ac1, ac2, all_ac, mi, ma] = apply_all(config)
-        data = pd.DataFrame(
-            {'idx': id, 'parameter': str(parameter_list), 'ac1': ac1, 'ac2': ac2, 'all_ac': str(all_ac), 'min': mi, 'max': ma},
-            index=[0])
-        result = result.append(data, ignore_index=True)
-        id += 1
+        controller.train()
 
-    csv_filename = 'result.csv'
-    result.to_csv(csv_filename, float_format='%.3f', index=True, header=True)
 
 def tuning2():
     config = Config()
@@ -86,7 +79,10 @@ def tuning2():
         config.set_parameters(parameter_list)
 
         total_ac1, total_ac2 = 0, 0
-        for i in range(5):
+
+        # [ac1, ac2, all_ac, mi, ma] = apply_all(config)
+
+        for i in range(10):
             [ac1, ac2, all_ac, mi, ma] = apply_all(config)
             total_ac1 += ac1
             total_ac2 += ac2
@@ -99,24 +95,27 @@ def tuning2():
         result = result.append(data, ignore_index=True)
         id += 1
 
-    csv_filename = 'result.csv'
+    csv_filename = 'tuning_result.csv'
     result.to_csv(csv_filename, float_format='%.5f', index=True, header=True)
-    # print(result)
+    print(result)
 
 def main():
     p_id = 1
+
+    test = Config()
+    print(test.number_of_combinations)
 
     # controller = Controller(Config())
     # controller.train()
 
     # apply_person(p_id)
 
-    apply_all()
+    # apply_all()
 
-    # tuning2()
+    # tuning()
 
-    # test = Config()
-    # print(test.number_of_combinations)
+    tuning2()
+
     # TODO - for some person: 2, 3, 4 are all wrong BUG ???
     # later same type items is categoried into other bucket
     # TODO - temp solution: 1.set alpha & beta when updating
@@ -124,5 +123,10 @@ def main():
     #                       3.set train time and reward_scale according to TRUE / FALSE
 
 
+def test():
+    dataloader = DataLoader()
+    dataloader.load_images()
+
 if '__main__' == __name__:
-    main()
+    # main()
+    test()

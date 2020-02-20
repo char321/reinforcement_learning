@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import cv2
 import pprint
 
 
@@ -7,11 +8,11 @@ class DataLoader:
     def __init__(self):
         dir_abs_name = os.path.dirname(os.path.abspath(__file__))
         base_path = os.path.dirname(dir_abs_name)
-        base_path = os.path.dirname(base_path) + '/data'
+        self.base_path = os.path.dirname(base_path) + '/data'
         file_name = '/database/Database.xlsx'
 
         # read data
-        data_path = base_path + file_name
+        data_path = self.base_path + file_name
         self.baskets = pd.read_excel(data_path, sheet_name='baskets')
         self.baskets_categories = pd.read_excel(data_path, sheet_name='baskets_categories')
         self.items = pd.read_excel(data_path, sheet_name='items')
@@ -185,6 +186,41 @@ class DataLoader:
 
         return persons
 
+    # TODO - name
+    def load_images(self):
+        persons = {}
+        p_ids = set(self.sorts['p_id'])
+
+        n = {}
+        for p_id in p_ids:
+
+            temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
+            i_ids = temp_sorts['i_id']
+
+            clothes = {}
+            for i_id in i_ids:
+                # focus on stock items first
+                item = self.items[self.items['i_id'] == int(i_id)]
+                image_name = str(item['i_image_front'].values[0]) + '.jpg'
+                if 'Photo' in image_name:
+                    image_name = image_name.replace('/Photo/', '/')
+
+                image_path = self.base_path + '/images/' + image_name
+                img = cv2.imread(image_path)
+
+                # print(image_name)
+                if img is None:
+                    n[str(i_id)] = image_path
+
+                clothes[int(i_id)] = img
+
+            persons[p_id] = clothes
+            # n[p_id] = temp
+        print(clothes)
+        # print(n)
+        # pp = pprint.PrettyPrinter(indent=4)
+        # pp.pprint(persons)
+
     def load_baskets_categories(self):
         # TODO
         return
@@ -203,4 +239,3 @@ class DataLoader:
         # full
         return ['t-shirt', 'sport', 'top', 'socks', 'polo', 'pants', 'jeans', 'shorts', 'shirt', 'skirt', 'pyjama',
                 'hat', 'baby', 'others']
-
