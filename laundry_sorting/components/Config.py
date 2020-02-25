@@ -28,7 +28,7 @@ class Config:
         self.incorrect_scale_list = [0.5, 1, 2]  # [0.5, 1, 2, 3]
 
         # TODO - parameter for DQN
-        self.state_dim = 60
+        self.state_dim = [None, 4032, 3024, 3]
 
         # Model
         self.model = self.model_list[2]

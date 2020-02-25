@@ -124,6 +124,9 @@ def main():
 
 
 def test():
+    # dataLoader = DataLoader()
+    # dataLoader.load_images()
+
     controller = Controller(Config())
 
     controller.train_with_dqn()

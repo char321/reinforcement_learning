@@ -199,7 +199,7 @@ class DataLoader:
             i_ids = temp_sorts['i_id']
 
             clothes = {}
-            for i_id in i_ids:
+            for i_id in [1]:
                 # focus on stock items first
                 item = self.items[self.items['i_id'] == int(i_id)]
                 image_name = str(item['i_image_front'].values[0]) + '.jpg'
@@ -213,10 +213,14 @@ class DataLoader:
                     n[str(i_id)] = image_path
                 else:
                     # TODO - JUST FOR TEST
-                    img = np.array(img)
-                    img = img[:10][:10][0]
-                    img = img[:20]
-                    img = img.reshape((1, 60))
+                    # print(img.shape)
+                    if img.shape == (3024, 4032, 3):
+                        img = np.transpose(img, (1, 0, 2))
+                    # print(img.shape)
+                    # img = np.array(img)
+                    # img = img[:10][:10][0]
+                    # img = img[:20]
+                    # img = img.reshape((1, 60))
 
                     clothes[int(i_id)] = img
 

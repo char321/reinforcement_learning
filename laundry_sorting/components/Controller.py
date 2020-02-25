@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import os
 import matplotlib.pyplot as plt
 from data_loader.DataLoader import DataLoader
@@ -228,9 +229,10 @@ class Controller:
             )
             tf.global_variables_initializer().run()
 
+            print('here')
             rs = []
             for i_episode in range(1000):
-
+                print(i_episode)
                 count = 0
                 for i_id in clothes.keys():
 
