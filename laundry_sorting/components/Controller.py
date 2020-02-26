@@ -211,11 +211,12 @@ class Controller:
         plt.close()
 
     def train_with_dqn(self):
-        images = self.dataloader.load_images()
+        images = self.dataloader.load_new_images()
+
         clothes = self.data[1]
         del(clothes[5])
         del (clothes[6])
-
+        print(clothes)
         with tf.Session() as sess:
             rl = DQN(
                 sess=sess,
@@ -225,25 +226,26 @@ class Controller:
                 gamma=0.99,
                 lr=0.01,
                 epsilon=0.1,
-                replace_target_iter=300
+                replace_target_iter=5
             )
             tf.global_variables_initializer().run()
 
             print('here')
             rs = []
-            for i_episode in range(1000):
+            for i_episode in range(100):
                 print(i_episode)
                 count = 0
-                for i_id in clothes.keys():
+
+                for i_id in list(clothes.keys()): # clothes.keys():
 
                     cloth = clothes[i_id]
-                    state = images[i_id][0]
+                    state = images[1][i_id]
                     count += 1
 
-                    # print(state)
                     r_sum = 0
-                # while True:
+                    # print(state.shape)
 
+                # while True:
                     action = rl.choose_action(state)
                     # print(action)
                     next_state = state

@@ -24,7 +24,7 @@ class DQN:
         self.epsilon = epsilon  # epsilon-greedy
         self.replace_target_iter = replace_target_iter  # 经历C步后更新target参数
 
-        self.memory = Memory(batch_size, 10000)
+        self.memory = Memory(batch_size, 5)
         self._learn_step_counter = 0
         self._generate_model()
 
@@ -46,20 +46,20 @@ class DQN:
         # self.s_ = tf.placeholder(tf.float32, shape=(None, self.s_dim), name='s_')
         # self.done = tf.placeholder(tf.float32, shape=(None, 1), name='done')
 
-        # self.scalarInput = tf.placeholder(shape=[None, self.s_dim], dtype=tf.float32)
-        # self.imageIn = tf.reshape(self.scalarInput, shape=[-1, 4032, 3024, 3])
-
+        # input of evaluate net
         self.s = tf.placeholder(shape=self.s_dim, dtype=tf.float32, name='s')
+        # input of target net
         self.s_ = tf.placeholder(shape=self.s_dim, dtype=tf.float32, name='s_')
+        # output q-valur of action
         self.a = tf.placeholder(tf.float32, shape=(None, self.a_dim), name='a')
         self.r = tf.placeholder(tf.float32, shape=(None, 1), name='r')
         self.done = tf.placeholder(tf.float32, shape=(None, 1), name='done')
         self.output = tf.placeholder(shape=[None, 1], dtype=tf.float32, name='output')
 
-
-
-        self.q_eval_z = self._build_net(self.s, 'eval_net')  # self.s, 'eval_net', True)
-        self.q_target_z = self._build_net(self.s_, 'target_net')  # self.s_, 'target_net', False)
+        # evaluate net
+        self.q_eval_z = self._build_net(self.s, 'eval_net')
+        # target net
+        self.q_target_z = self._build_net(self.s_, 'target_net')
 
         # y = r + gamma * max(q^)
         q_target = self.r + self.gamma * tf.reduce_max(self.q_target_z, axis=1, keepdims=True) * (1 - self.done)
@@ -111,9 +111,9 @@ class DQN:
 
             q_w = tf.get_variable('q_w', shape=[self.fc_out1.shape[1], self.a_dim], initializer=kernel_initializer)
             q_b = tf.get_variable('q_b', shape=[self.a_dim], initializer=bias_initializer)
-            q = tf.matmul(self.fc_out1, q_w) + q_b
+            self.q = tf.matmul(self.fc_out1, q_w) + q_b
 
-        return q
+        return self.q
 
     def store_transition_and_learn(self, s, a, r, s_, done):
         print('store')
@@ -131,6 +131,11 @@ class DQN:
     def _learn(self):
         print('learn')
         s, a, r, s_, done = self.memory.get_mini_batches()
+
+        # print(s.shape)
+        # print(a)
+        # print(r)
+        # print(s_)
 
         loss, _ = self.sess.run([self.loss, self.optimizer], feed_dict={
             self.s: s,

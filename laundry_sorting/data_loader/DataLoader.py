@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import os
 import cv2
-import pprint
+import glob
+from PIL import Image
 
 
 class DataLoader:
@@ -230,6 +231,62 @@ class DataLoader:
         # print(n)
         # pp = pprint.PrettyPrinter(indent=4)
         # pp.pprint(persons)
+
+    def resize_image(self):
+        p_ids = set(self.sorts['p_id'])
+
+        for p_id in p_ids:
+            temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
+            i_ids = temp_sorts['i_id']
+
+            for i_id in i_ids:
+                print(i_id)
+                item = self.items[self.items['i_id'] == int(i_id)]
+                image_name = str(item['i_image_front'].values[0]) + '.jpg'
+                if 'Photo' in image_name:
+                    image_name = image_name.replace('/Photo/', '/')
+
+                image_path = self.base_path + '/images/' + image_name
+
+                try:
+                    img = Image.open(image_path)
+                except:
+                    continue
+
+                res = img.resize((300, 400), Image.ANTIALIAS)
+
+                new_image_path = self.base_path + '/new_images/img' + str(i_id) + '.jpg'
+                res.save(new_image_path)
+
+    def load_new_images(self):
+        persons = {}
+        p_ids = set(self.sorts['p_id'])
+
+        n = {}
+        for p_id in [1]: # pids:
+
+            temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
+            i_ids = temp_sorts['i_id']
+
+            clothes = {}
+            for i_id in i_ids:
+
+                item = self.items[self.items['i_id'] == int(i_id)]
+                image_name = str(item['i_image_front'].values[0]) + '.jpg'
+                if 'Photo' in image_name:
+                    image_name = image_name.replace('/Photo/', '/')
+
+                image_path = self.base_path + '/new_images/img' + str(i_id) + '.jpg'
+                img = cv2.imread(image_path)
+
+                if img is None:
+                    n[str(i_id)] = image_path
+                else:
+                    clothes[int(i_id)] = img
+
+            persons[p_id] = clothes
+            # n[p_id] = temp
+        return persons
 
     def load_baskets_categories(self):
         # TODO
