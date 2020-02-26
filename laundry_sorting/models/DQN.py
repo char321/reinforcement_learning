@@ -29,7 +29,7 @@ class DQN:
         self._generate_model()
 
     def choose_action(self, s):
-        print('choose action')
+        # print('choose action')
         if np.random.rand() < self.epsilon:
             return np.random.randint(self.a_dim)
         else:
@@ -116,7 +116,7 @@ class DQN:
         return self.q
 
     def store_transition_and_learn(self, s, a, r, s_, done):
-        print('store')
+        # print('store')
         if self._learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.target_replace_ops)
 
@@ -129,7 +129,7 @@ class DQN:
         self._learn_step_counter += 1
 
     def _learn(self):
-        print('learn')
+        # print('learn')
         s, a, r, s_, done = self.memory.get_mini_batches()
 
         # print(s.shape)

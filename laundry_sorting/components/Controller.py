@@ -222,17 +222,18 @@ class Controller:
                 sess=sess,
                 s_dim=self.config.state_dim,
                 a_dim=len(self.baskets),
-                batch_size=1,
-                gamma=0.99,
-                lr=0.01,
+                batch_size=5,
+                gamma=0,
+                lr=0.001,
                 epsilon=0.1,
-                replace_target_iter=5
+                replace_target_iter=10
             )
             tf.global_variables_initializer().run()
 
             print('here')
             rs = []
             for i_episode in range(100):
+                print('episode')
                 print(i_episode)
                 count = 0
 
@@ -271,4 +272,6 @@ class Controller:
                         rs.append(r_sum)
                         break
 
-            print('mean', np.mean(rs))
+            # print('mean', np.mean(rs))
+
+        print('FINISH')
