@@ -21,3 +21,9 @@ class Memory:
         t = list(zip(*t))
 
         return tuple(np.array(e) for e in t)
+
+    def reset_transition(self):
+        for i in range(len(self._transition_store)):
+            s, a, r, s_, done = self._transition_store.popleft()
+            a = np.append(a, 0)
+            self._transition_store.append((s, a, r, s_, done))

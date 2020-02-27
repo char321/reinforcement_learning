@@ -211,12 +211,24 @@ class Controller:
         plt.close()
 
     def train_with_dqn(self):
-        images = self.dataloader.load_new_images()
+        update_time = 0
+        self.images_data = self.dataloader.load_new_images()
+        print('id: ' + str(self.user.get_pid()))
+        images = self.images_data[self.user.get_pid()]
+        clothes = self.data[self.user.get_pid()]
 
-        clothes = self.data[1]
+        # print(images)
+        # print(clothes)
+
         del(clothes[5])
         del (clothes[6])
-        print(clothes)
+        for key in list(clothes.keys()):
+            if key not in images:
+                del(clothes[key])
+
+        best_results = None
+        best_accuracy = None
+        tf.reset_default_graph()
         with tf.Session() as sess:
             rl = DQN(
                 sess=sess,
@@ -224,23 +236,25 @@ class Controller:
                 a_dim=len(self.baskets),
                 batch_size=5,
                 gamma=0,
-                lr=0.001,
+                lr=0.0001,
                 epsilon=0.1,
                 replace_target_iter=10
             )
             tf.global_variables_initializer().run()
 
-            print('here')
+            # print('here')
             rs = []
             for i_episode in range(100):
-                print('episode')
-                print(i_episode)
+                rewards = []
+
+                # print('episode')
+                # print(i_episode)
                 count = 0
 
                 for i_id in list(clothes.keys()): # clothes.keys():
 
                     cloth = clothes[i_id]
-                    state = images[1][i_id]
+                    state = images[i_id]
                     count += 1
 
                     r_sum = 0
@@ -255,15 +269,34 @@ class Controller:
                         # print(i_id)
                         temp_id = list(clothes.keys())[count]
                         # print(temp_id)
-                        next_state = images[temp_id][0]
+                        next_state = images[temp_id]
 
                     basket_key = list(self.baskets.keys())[action]
                     correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
                     reward = 1 if basket_key in correct_label else -1
-                    print(reward)
+                    # print(reward)
+                    rewards.append(1 if reward == 1 else 0)
+
+                    if reward == -1:
+                        asked_label = self.ask_for_label(cloth)
+                        if asked_label == 0:
+                            continue
+
+                        if asked_label not in self.baskets:
+
+                            if self.nob >= self.mob:
+                                print("Already achieve maximum number of baskets!")
+                            else:
+                                print("Add basket")
+                                self.baskets = self.robot.add_new_label(asked_label, self.baskets)
+                                self.nob += 1
+                                # TODO - update the entire network
+                                update_time += 1
+                                rl.update_actions(update_time)
+                                tf.global_variables_initializer().run()
+                                rl.test()
 
                     done = False
-
                     rl.store_transition_and_learn(state, action, reward, next_state, done)
 
                     r_sum += 1
@@ -272,6 +305,14 @@ class Controller:
                         rs.append(r_sum)
                         break
 
+                # print(sum(rewards))
+                # print(len(rewards))
+                accuracy = float(sum(rewards)) / float(len(rewards))
+                if not best_accuracy or accuracy < best_accuracy:
+                    best_results = rewards
+                    best_accuracy = accuracy
+
             # print('mean', np.mean(rs))
 
         print('FINISH')
+        return (best_results, best_accuracy)

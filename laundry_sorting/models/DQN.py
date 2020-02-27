@@ -51,10 +51,9 @@ class DQN:
         # input of target net
         self.s_ = tf.placeholder(shape=self.s_dim, dtype=tf.float32, name='s_')
         # output q-valur of action
-        self.a = tf.placeholder(tf.float32, shape=(None, self.a_dim), name='a')
+        self.a = tf.placeholder(tf.float32, shape=(None, None), name='a')
         self.r = tf.placeholder(tf.float32, shape=(None, 1), name='r')
         self.done = tf.placeholder(tf.float32, shape=(None, 1), name='done')
-        self.output = tf.placeholder(shape=[None, 1], dtype=tf.float32, name='output')
 
         # evaluate net
         self.q_eval_z = self._build_net(self.s, 'eval_net')
@@ -62,13 +61,13 @@ class DQN:
         self.q_target_z = self._build_net(self.s_, 'target_net')
 
         # y = r + gamma * max(q^)
-        q_target = self.r + self.gamma * tf.reduce_max(self.q_target_z, axis=1, keepdims=True) * (1 - self.done)
+        self.q_target = self.r + self.gamma * tf.reduce_max(self.q_target_z, axis=1, keepdims=True) * (1 - self.done)
 
-        q_eval = tf.reduce_sum(self.a * self.q_eval_z, axis=1, keepdims=True)
+        self.q_eval = tf.reduce_sum(self.a * self.q_eval_z, axis=1, keepdims=True)
         # a_mask = tf.cast(self.a, tf.bool)
         # q_eval = tf.expand_dims(tf.boolean_mask(self.q_eval_z, a_mask), 1)
 
-        self.loss = tf.reduce_mean(tf.squared_difference(q_target, q_eval))
+        self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
         self.optimizer = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
 
         param_target = tf.global_variables(scope='target_net')
@@ -87,32 +86,34 @@ class DQN:
             #
             # return q_z
 
-            conv_filter_w1 = tf.get_variable('w1', shape=[8, 8, 3, 32], initializer=kernel_initializer)
-            conv_filter_b1 = tf.get_variable('b1', shape=[32], initializer=bias_initializer)
-            self.l1 = tf.nn.relu(tf.nn.conv2d(input=s, filter=conv_filter_w1, strides=[1, 4, 4, 1],
-                                              padding='VALID') + conv_filter_b1)
+            self.conv_filter_w1 = tf.get_variable('w1', shape=[8, 8, 3, 32], initializer=kernel_initializer)
+            self.conv_filter_b1 = tf.get_variable('b1', shape=[32], initializer=bias_initializer)
+            self.l1 = tf.nn.relu(tf.nn.conv2d(input=s, filter=self.conv_filter_w1, strides=[1, 4, 4, 1],
+                                              padding='VALID') + self.conv_filter_b1)
 
-            conv_filter_w2 = tf.get_variable('w2', shape=[4, 4, 32, 64], initializer=kernel_initializer)
-            conv_filter_b2 = tf.get_variable('b2', shape=[64], initializer=bias_initializer)
-            self.l2 = tf.nn.relu(tf.nn.conv2d(input=self.l1, filter=conv_filter_w2, strides=[1, 2, 2, 1],
-                                              padding='VALID') + conv_filter_b2)
+            self.conv_filter_w2 = tf.get_variable('w2', shape=[4, 4, 32, 64], initializer=kernel_initializer)
+            self.conv_filter_b2 = tf.get_variable('b2', shape=[64], initializer=bias_initializer)
+            self.l2 = tf.nn.relu(tf.nn.conv2d(input=self.l1, filter=self.conv_filter_w2, strides=[1, 2, 2, 1],
+                                              padding='VALID') + self.conv_filter_b2)
 
-            conv_filter_w3 = tf.get_variable('w3', shape=[3, 3, 64, 64], initializer=kernel_initializer)
-            conv_filter_b3 = tf.get_variable('b3', shape=[64], initializer=bias_initializer)
-            self.l3 = tf.nn.relu(tf.nn.conv2d(input=self.l2, filter=conv_filter_w3, strides=[1, 1, 1, 1],
-                                              padding='VALID') + conv_filter_b3)
+            self.conv_filter_w3 = tf.get_variable('w3', shape=[3, 3, 64, 64], initializer=kernel_initializer)
+            self.conv_filter_b3 = tf.get_variable('b3', shape=[64], initializer=bias_initializer)
+            self.l3 = tf.nn.relu(tf.nn.conv2d(input=self.l2, filter=self.conv_filter_w3, strides=[1, 1, 1, 1],
+                                              padding='VALID') + self.conv_filter_b3)
 
             shape = self.l3.get_shape().as_list()
             self.l3_flat = tf.reshape(self.l3, [-1, reduce(lambda x, y: x * y, shape[1:])])
 
-            fc_w1 = tf.get_variable('fc_w1', shape=[self.l3_flat.shape[1], 512], initializer=kernel_initializer)
-            fc_b1 = tf.get_variable('fc_b1', shape=[512], initializer=bias_initializer)
-            self.fc_out1 = tf.nn.relu(tf.matmul(self.l3_flat, fc_w1) + fc_b1)
+            self.fc_w1 = tf.get_variable('fc_w1', shape=[self.l3_flat.shape[1], 512], initializer=kernel_initializer)
+            self.fc_b1 = tf.get_variable('fc_b1', shape=[512], initializer=bias_initializer)
+            self.fc_out1 = tf.nn.relu(tf.matmul(self.l3_flat, self.fc_w1) + self.fc_b1)
 
-            q_w = tf.get_variable('q_w', shape=[self.fc_out1.shape[1], self.a_dim], initializer=kernel_initializer)
-            q_b = tf.get_variable('q_b', shape=[self.a_dim], initializer=bias_initializer)
-            self.q = tf.matmul(self.fc_out1, q_w) + q_b
-
+            self.q_w = tf.get_variable('q_w', shape=[self.fc_out1.shape[1], self.a_dim], initializer=kernel_initializer)
+            self.q_b = tf.get_variable('q_b', shape=[self.a_dim], initializer=bias_initializer)
+            # self.q = tf.get_variable('q', shape)
+            self.q = tf.matmul(self.fc_out1, self.q_w) + self.q_b
+            # print('FUCK')
+            # print(np.shape(self.q))
         return self.q
 
     def store_transition_and_learn(self, s, a, r, s_, done):
@@ -135,8 +136,11 @@ class DQN:
         # print(s.shape)
         # print(a)
         # print(r)
-        # print(s_)
-
+        # print(s_.shape)
+        # print(done)
+        #
+        # print(np.shape(self.a))
+        # print(np.shape(a))
         loss, _ = self.sess.run([self.loss, self.optimizer], feed_dict={
             self.s: s,
             self.a: a,
@@ -144,3 +148,78 @@ class DQN:
             self.s_: s_,
             self.done: done
         })
+
+    def update_actions(self, update_time):
+        self.a_dim += 1
+        # self.a = tf.placeholder(tf.float32, shape=(None, self.a_dim), name='a')
+        self.memory.reset_transition()
+
+        # evaluate net
+        self.q_eval_z = self.update_net(self.s, 'eval_net_' + str(update_time))
+        # target net
+        self.q_target_z = self.update_net(self.s_, 'target_net_' + str(update_time))
+
+        # y = r + gamma * max(q^)
+        self.q_target = self.r + self.gamma * tf.reduce_max(self.q_target_z, axis=1, keepdims=True) * (1 - self.done)
+
+        self.q_eval = tf.reduce_sum(self.a * self.q_eval_z, axis=1, keepdims=True)
+        # a_mask = tf.cast(self.a, tf.bool)
+        # q_eval = tf.expand_dims(tf.boolean_mask(self.q_eval_z, a_mask), 1)
+
+        self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
+        # TODO - NEED TO UPDATE?
+        self.optimizer = tf.train.AdamOptimizer(self.lr, name='opt').minimize(self.loss)
+
+        # 将eval网络参数复制给target网络
+        param_target = tf.global_variables(scope='target_net_' + str(update_time))
+        param_eval = tf.global_variables(scope='eval_net_' + str(update_time))
+        # 将eval网络参数复制给target网络
+        self.target_replace_ops = [tf.assign(t, e) for t, e in zip(param_target, param_eval)]
+
+    def update_net(self, s, scope):  # , s, scope, trainable):
+
+        print('update_net' + scope)
+        with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
+            new_w1 = tf.get_variable('w1', shape=[8, 8, 3, 32])
+            self.conv_filter_w1 = tf.assign(new_w1, self.conv_filter_w1)
+            new_b1 = tf.get_variable('b1', shape=[32])
+            self.conv_filter_b1 = tf.assign(new_b1, self.conv_filter_b1)
+            self.l1 = tf.nn.relu(tf.nn.conv2d(input=s, filter=self.conv_filter_w1, strides=[1, 4, 4, 1],
+                                              padding='VALID') + self.conv_filter_b1)
+
+            new_w2 = tf.get_variable('w2', shape=[4, 4, 32, 64])
+            self.conv_filter_w2 = tf.assign(new_w2, self.conv_filter_w2)
+            new_b2 = tf.get_variable('b2', shape=[64])
+            self.conv_filter_b2 = tf.assign(new_b2, self.conv_filter_b2)
+            self.l2 = tf.nn.relu(tf.nn.conv2d(input=self.l1, filter=self.conv_filter_w2, strides=[1, 2, 2, 1],
+                                              padding='VALID') + self.conv_filter_b2)
+
+            new_w3 = tf.get_variable('w3', shape=[3, 3, 64, 64])
+            self.conv_filter_w3 = tf.assign(new_w3, self.conv_filter_w3)
+            new_b3 = tf.get_variable('b3', shape=[64])
+            self.conv_filter_b3 = tf.assign(new_b3, self.conv_filter_b3)
+            self.l3 = tf.nn.relu(tf.nn.conv2d(input=self.l2, filter=self.conv_filter_w3, strides=[1, 1, 1, 1],
+                                              padding='VALID') + self.conv_filter_b3)
+
+            shape = self.l3.get_shape().as_list()
+            self.l3_flat = tf.reshape(self.l3, [-1, reduce(lambda x, y: x * y, shape[1:])])
+
+            new_fc_w1 = tf.get_variable('fc_w1', shape=[self.l3_flat.shape[1], 512])
+            self.fc_w1 = tf.assign(new_fc_w1, self.fc_w1)
+            new_fc_b1 = tf.get_variable('fc_b1', shape=[512])
+            self.fc_b1 = tf.assign(new_fc_b1, self.fc_b1)
+            self.fc_out1 = tf.nn.relu(tf.matmul(self.l3_flat, self.fc_w1) + self.fc_b1)
+
+            self.q_w = tf.Variable(
+                tf.truncated_normal(shape=[self.fc_out1.shape[1], self.a_dim], stddev=0.02, dtype=tf.float32))
+            self.q_b = tf.Variable(tf.constant(0, shape=[self.a_dim], dtype=tf.float32))
+
+            # print('FUCK2')
+            # print(np.shape(self.q))
+
+            self.q = tf.matmul(self.fc_out1, self.q_w) + self.q_b
+
+        return self.q
+
+    def test(self):
+        self.sess.run(self.target_replace_ops)

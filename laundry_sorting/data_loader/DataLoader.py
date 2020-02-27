@@ -263,7 +263,7 @@ class DataLoader:
         p_ids = set(self.sorts['p_id'])
 
         n = {}
-        for p_id in [1]: # pids:
+        for p_id in p_ids: # pids:
 
             temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
             i_ids = temp_sorts['i_id']

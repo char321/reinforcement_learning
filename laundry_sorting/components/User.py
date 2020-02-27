@@ -11,3 +11,6 @@ class User:
     def guide_label(self, cloth):
         # function to simulate guide of user
         return cloth['bc_id_1']
+
+    def get_pid(self):
+        return self.p_id

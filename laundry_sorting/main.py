@@ -127,9 +127,16 @@ def test():
     # dataLoader = DataLoader()
     # dataLoader.load_new_images()
 
-
-    controller = Controller(Config())
-    controller.train_with_dqn()
+    res = []
+    acc = []
+    for p_id in range(1, 31):
+        controller = Controller(Config())
+        controller.set_user(p_id)
+        (results, accuracy) = controller.train_with_dqn()
+        res.append(results)
+        acc.append(accuracy)
+    print(res)
+    print(acc)
 
 if '__main__' == __name__:
     # main()
