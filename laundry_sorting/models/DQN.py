@@ -221,5 +221,5 @@ class DQN:
 
         return self.q
 
-    def test(self):
+    def copy_net(self):
         self.sess.run(self.target_replace_ops)

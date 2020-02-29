@@ -129,22 +129,22 @@ def test():
     # dataLoader = DataLoader()
     # dataLoader.image_aug()
 
-    res = []
-    acc = []
-    for p_id in range(1, 31):
-        controller = Controller(Config())
-        controller.set_user(p_id)
-        (results, accuracy) = controller.train_with_dqn()
-        res.append(results)
-        acc.append(accuracy)
-    # print(res)
-    print(acc)
+    # res = []
+    # acc = []
+    # for p_id in range(1, 31):
+    #     controller = Controller(Config())
+    #     controller.set_user(p_id)
+    #     (results, accuracy) = controller.train_with_dqn()
+    #     res.append(results)
+    #     acc.append(accuracy)
+    # # print(res)
+    # print(acc)
 
-    # controller = Controller(Config())
-    # controller.set_user(1)
-    # (results, accuracy) = controller.train_with_dqn()
-    # print(results)
-    # print(accuracy)
+    controller = Controller(Config())
+    controller.set_user(1)
+    (results, accuracy) = controller.apply_with_dqn()
+    print(results)
+    print(accuracy)
 
 
 if '__main__' == __name__:
