@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import tensorflow.compat.v1 as tf
+
 tf.disable_v2_behavior()
 import os
 import matplotlib.pyplot as plt
@@ -211,8 +212,23 @@ class Controller:
         plt.close()
 
     def train_with_dqn(self):
+        img_dict = {
+            0: 'og',
+            1: 'ud',
+            2: 'lr',
+            3: 'affine',
+            4: 'rot1',
+            5: 'rot2',
+            6: 'scale',
+            7: 'blur',
+            8: 'add',
+            9: 'com1',
+            10: 'com2',
+            11: 'com3'
+        }
+
         update_time = 0
-        self.images_data = self.dataloader.load_new_images()
+        self.images_data = self.dataloader.image_aug()
         print('id: ' + str(self.user.get_pid()))
         images = self.images_data[self.user.get_pid()]
         clothes = self.data[self.user.get_pid()]
@@ -220,11 +236,11 @@ class Controller:
         # print(images)
         # print(clothes)
 
-        del(clothes[5])
+        del (clothes[5])
         del (clothes[6])
         for key in list(clothes.keys()):
             if key not in images:
-                del(clothes[key])
+                del (clothes[key])
 
         best_results = None
         best_accuracy = None
@@ -234,84 +250,72 @@ class Controller:
                 sess=sess,
                 s_dim=self.config.state_dim,
                 a_dim=len(self.baskets),
-                batch_size=5,
+                batch_size=5 * len(img_dict),
                 gamma=0,
-                lr=0.0001,
+                lr=0.00001,
                 epsilon=0.1,
-                replace_target_iter=10
+                replace_target_iter=10 * len(img_dict)
             )
             tf.global_variables_initializer().run()
 
             # print('here')
-            rs = []
-            for i_episode in range(100):
+            for i_episode in range(300):
                 rewards = []
 
-                # print('episode')
-                # print(i_episode)
-                count = 0
-
-                for i_id in list(clothes.keys()): # clothes.keys():
-
+                for i_id in list(clothes.keys()):  # clothes.keys():
+                    # print('item ' + str(i_id))
                     cloth = clothes[i_id]
-                    state = images[i_id]
-                    count += 1
+                    img_list = images[i_id]
 
-                    r_sum = 0
-                    # print(state.shape)
+                    for i in range(len(img_dict)):
+                        img_name = img_dict[i]
+                        state = img_list[img_name]
+                        # print('image ' + img_name)
+                        # prsint(state.shape)
 
-                # while True:
-                    action = rl.choose_action(state)
-                    # print(action)
-                    next_state = state
-                    if count < len(images) - 2:
-                        # print('i_id')
-                        # print(i_id)
-                        temp_id = list(clothes.keys())[count]
-                        # print(temp_id)
-                        next_state = images[temp_id]
+                        # while True:
+                        action = rl.choose_action(state)
+                        # print(action)
+                        next_state = img_list[img_dict[(i + 1) % len(img_dict)]]
 
-                    basket_key = list(self.baskets.keys())[action]
-                    correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
-                    reward = 1 if basket_key in correct_label else -1
-                    # print(reward)
-                    rewards.append(1 if reward == 1 else 0)
+                        basket_key = list(self.baskets.keys())[action]
+                        correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
+                        reward = 1 if basket_key in correct_label else -1
+                        # print(reward)
+                        rewards.append(1 if reward == 1 else 0)
 
-                    if reward == -1:
-                        asked_label = self.ask_for_label(cloth)
-                        if asked_label == 0:
-                            continue
+                        if reward == -1:
+                            asked_label = self.ask_for_label(cloth)
+                            if asked_label == 0:
+                                continue
 
-                        if asked_label not in self.baskets:
+                            if asked_label not in self.baskets:
 
-                            if self.nob >= self.mob:
-                                print("Already achieve maximum number of baskets!")
-                            else:
-                                print("Add basket")
-                                self.baskets = self.robot.add_new_label(asked_label, self.baskets)
-                                self.nob += 1
-                                # TODO - update the entire network
-                                update_time += 1
-                                rl.update_actions(update_time)
-                                tf.global_variables_initializer().run()
-                                rl.test()
+                                if self.nob >= self.mob:
+                                    print("Already achieve maximum number of baskets!")
+                                else:
+                                    print("Add basket")
+                                    self.baskets = self.robot.add_new_label(asked_label, self.baskets)
+                                    self.nob += 1
+                                    # TODO - update the entire network
+                                    update_time += 1
+                                    rl.update_actions(update_time)
+                                    tf.global_variables_initializer().run()
+                                    rl.test()
 
-                    done = False
-                    rl.store_transition_and_learn(state, action, reward, next_state, done)
+                        done = False
+                        rl.store_transition_and_learn(state, action, reward, next_state, done)
 
-                    r_sum += 1
-                    if done:
-                        print(i_episode, r_sum)
-                        rs.append(r_sum)
-                        break
+                        if done:
+                            break
 
                 # print(sum(rewards))
                 # print(len(rewards))
                 accuracy = float(sum(rewards)) / float(len(rewards))
-                if not best_accuracy or accuracy < best_accuracy:
+                if not best_accuracy or accuracy > best_accuracy:
                     best_results = rewards
                     best_accuracy = accuracy
-
+                print('episode: ' + str(i_episode) + ' acc: ' + str(accuracy))
             # print('mean', np.mean(rs))
 
         print('FINISH')

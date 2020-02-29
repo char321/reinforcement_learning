@@ -4,6 +4,8 @@ import os
 import cv2
 import glob
 from PIL import Image
+from imgaug import augmenters as iaa
+import imgaug as ia
 
 
 class DataLoader:
@@ -257,6 +259,89 @@ class DataLoader:
 
                 new_image_path = self.base_path + '/new_images/img' + str(i_id) + '.jpg'
                 res.save(new_image_path)
+
+    def image_aug(self):
+        persons = {}
+        p_ids = set(self.sorts['p_id'])
+
+        n = {}
+        for p_id in p_ids:  # pids:
+
+            temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
+            i_ids = temp_sorts['i_id']
+
+            clothes = {}
+            for i_id in i_ids:
+
+                item = self.items[self.items['i_id'] == int(i_id)]
+                image_name = str(item['i_image_front'].values[0]) + '.jpg'
+                if 'Photo' in image_name:
+                    image_name = image_name.replace('/Photo/', '/')
+
+                image_path = self.base_path + '/new_images/img' + str(i_id) + '.jpg'
+                img = cv2.imread(image_path)
+
+                if img is None:
+                    n[str(i_id)] = image_path
+                    continue
+
+                # Image Augmentation
+                ia.seed(3)
+                img_flipud = iaa.Flipud(1.0).augment_image(img)
+                img_fliplr = iaa.Fliplr(1.0).augment_image(img)
+                img_affine = iaa.ShearY((-20, 20)).augment_image(img)
+                img_rotate1 = iaa.Rotate((0, 90)).augment_image(img)
+                img_rotate2 = iaa.Rotate((90, 180)).augment_image(img)
+                img_scale = iaa.PerspectiveTransform(scale=(0.01, 0.15)).augment_image(img)
+                img_blur = iaa.GaussianBlur(sigma=(0.0, 1.5)).augment_image(img)
+                img_add = iaa.Add((-20, 20)).augment_image(img)
+
+                seq1 = iaa.Sequential([
+                    iaa.Flipud(0.5),
+                    iaa.Fliplr(0.5),
+                    iaa.GaussianBlur(sigma=(0.0, 1.5)),
+                    iaa.Add((-20, 20))
+                ])
+
+                seq2 = iaa.Sequential([
+                    iaa.Flipud(0.5),
+                    iaa.Fliplr(0.5),
+                    iaa.ShearY((-20, 20)),
+                    iaa.Add((-20, 20))
+                ])
+
+                seq3 = iaa.Sequential([
+                    iaa.Flipud(0.5),
+                    iaa.Fliplr(0.5),
+                    iaa.Rotate((-180, 180)),
+                    iaa.PerspectiveTransform(scale=(0.01, 0.1))
+                ])
+
+                img_com1 = seq1.augment_image(img)
+                img_com2 = seq2.augment_image(img)
+                img_com3 = seq3.augment_image(img)
+
+                cloth = {
+                    'og': img,
+                    'ud': img_flipud,
+                    'lr': img_fliplr,
+                    'affine': img_affine,
+                    'rot1': img_rotate1,
+                    'rot2': img_rotate2,
+                    'scale': img_scale,
+                    'blur': img_blur,
+                    'add': img_add,
+                    'com1': img_com1,
+                    'com2': img_com2,
+                    'com3': img_com3
+                }
+
+                clothes[int(i_id)] = cloth
+
+            persons[p_id] = clothes
+            # n[p_id] = temp
+        return persons
+
 
     def load_new_images(self):
         persons = {}

@@ -5,6 +5,7 @@ import pandas as pd
 import pprint
 from data_loader.DataLoader import DataLoader
 
+
 def test_all():
     controller = Controller()
 
@@ -99,6 +100,7 @@ def tuning2():
     result.to_csv(csv_filename, float_format='%.5f', index=True, header=True)
     print(result)
 
+
 def main():
     p_id = 1
 
@@ -125,7 +127,7 @@ def main():
 
 def test():
     # dataLoader = DataLoader()
-    # dataLoader.load_new_images()
+    # dataLoader.image_aug()
 
     res = []
     acc = []
@@ -135,8 +137,15 @@ def test():
         (results, accuracy) = controller.train_with_dqn()
         res.append(results)
         acc.append(accuracy)
-    print(res)
+    # print(res)
     print(acc)
+
+    # controller = Controller(Config())
+    # controller.set_user(1)
+    # (results, accuracy) = controller.train_with_dqn()
+    # print(results)
+    # print(accuracy)
+
 
 if '__main__' == __name__:
     # main()
