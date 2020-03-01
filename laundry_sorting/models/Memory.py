@@ -2,28 +2,28 @@ import collections
 import random
 import numpy as np
 
-# 记忆库
+
 class Memory:
     def __init__(self, batch_size, max_size):
-        self.batch_size = batch_size # mini batch大小
-        self.max_size = max_size
-        self._transition_store = collections.deque()
+        self.batch_size = batch_size  # size of mini-batch
+        self.max_size = max_size  # maximum size of memory
+        self.transitions = collections.deque()
 
     def store_transition(self, s, a, r, s_, done):
-        if len(self._transition_store) == self.max_size:
-            self._transition_store.popleft()
+        if len(self.transitions) == self.max_size:
+            self.transitions.popleft()
 
-        self._transition_store.append((s, a, r, s_, done))
+        self.transitions.append((s, a, r, s_, done))
 
     def get_mini_batches(self):
-        n_sample = self.batch_size if len(self._transition_store) >= self.batch_size else len(self._transition_store)
-        t = random.sample(self._transition_store, k=n_sample)
+        n_sample = min(self.batch_size, len(self.transitions))
+        t = random.sample(self.transitions, k=n_sample)
         t = list(zip(*t))
 
         return tuple(np.array(e) for e in t)
 
-    def reset_transition(self):
-        for i in range(len(self._transition_store)):
-            s, a, r, s_, done = self._transition_store.popleft()
+    def increase_action_dim(self):
+        for i in range(len(self.transitions)):
+            s, a, r, s_, done = self.transitions.popleft()
             a = np.append(a, 0)
-            self._transition_store.append((s, a, r, s_, done))
+            self.transitions.append((s, a, r, s_, done))

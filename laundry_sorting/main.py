@@ -140,11 +140,16 @@ def test():
     # # print(res)
     # print(acc)
 
+    # controller = Controller(Config())
+    # controller.set_user(1)
+    # (results, accuracy) = controller.apply_with_dqn()
+    # print(results)
+    # print(accuracy)
+
     controller = Controller(Config())
     controller.set_user(1)
-    (results, accuracy) = controller.apply_with_dqn()
-    print(results)
-    print(accuracy)
+    controller.apply_with_dqn()
+    # controller.test_with_dqn()
 
 
 if '__main__' == __name__:

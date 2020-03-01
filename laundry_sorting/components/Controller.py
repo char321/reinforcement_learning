@@ -1,9 +1,7 @@
 import pandas as pd
 import numpy as np
-import tensorflow.compat.v1 as tf
-
-tf.disable_v2_behavior()
 import os
+import json
 import matplotlib.pyplot as plt
 from data_loader.DataLoader import DataLoader
 from models.TDModel import QLearningModel
@@ -11,7 +9,10 @@ from models.TDModel import SarsaModel
 from models.DQN import DQN
 from components.User import User
 from components.Robot import Robot
-from components.Config import Config
+from sklearn.model_selection import train_test_split
+import tensorflow.compat.v1 as tf
+
+tf.disable_v2_behavior()
 
 
 # persons
@@ -249,9 +250,11 @@ class Controller:
         }
 
     def apply_with_dqn(self):
+        episode = 300
         update_time = 0
         self.images_data = self.dataloader.image_aug()
         images = self.images_data[self.user.get_pid()]
+        train, test = train_test_split(images, test_size=0.3)
 
         best_results = None
         best_accuracy = None
@@ -261,32 +264,32 @@ class Controller:
                 sess=sess,
                 s_dim=self.config.state_dim,
                 a_dim=len(self.baskets),
-                batch_size=5 * len(self.img_dict),
+                batch_size=int(0.1 * len(self.img_dict)),
                 gamma=0,
                 lr=0.00001,
                 epsilon=0.1,
-                replace_target_iter=10 * len(self.img_dict)
+                replace_target_iter=int(0.2 * len(self.img_dict))
             )
             tf.global_variables_initializer().run()
 
-            print('id: ' + str(self.user.get_pid()))
-            for i_episode in range(100):
-                rewards = []
+            print('Id: ' + str(self.user.get_pid()))
+            for i_episode in range(1, episode + 1):
 
-                for i, img in enumerate(images):
+                train_rewards = []
+                for i, img in enumerate(train):
                     state = img['data']
                     action = rl.choose_action(state)
                     # print(action)
                     # TODO -random set next state
-                    next_state = images[(i + 1) % len(images)]['data']
+                    next_state = train[(i + 1) % len(train)]['data']
 
                     basket_key = list(self.baskets.keys())[action]
                     correct_label = img['label']
                     reward = 1 if basket_key in correct_label else -1
                     # print(reward)
-                    rewards.append(1 if reward == 1 else 0)
+                    train_rewards.append(1 if reward == 1 else 0)
 
-                    print('Train with item ' + str(img['i_id']) + ' with type ' + str(img['type']))
+                    # print('Train with item ' + str(img['i_id']) + ' with type ' + str(img['type']))
                     if reward == -1:
                         # simulate to ask label from user
                         asked_label = self.ask_for_label_with_img(img)
@@ -303,18 +306,93 @@ class Controller:
                                 self.nob += 1
                                 # TODO - update the entire network
                                 update_time += 1
-                                rl.update_actions(update_time)
+                                rl.update_actions()
                                 tf.global_variables_initializer().run()
                                 rl.copy_net()
 
                     done = False
                     rl.store_transition_and_learn(state, action, reward, next_state, done)
 
-            accuracy = float(sum(rewards)) / float(len(rewards))
-            if not best_accuracy or accuracy > best_accuracy:
-                best_results = rewards
-                best_accuracy = accuracy
-            print('episode: ' + str(i_episode) + ' acc: ' + str(accuracy))
+                train_accuracy = float(sum(train_rewards)) / float(len(train_rewards))
+                if not best_accuracy or train_accuracy > best_accuracy:
+                    best_results = train_rewards
+                    best_accuracy = train_accuracy
+
+                test_rewards = []
+                for i, img in enumerate(test):
+                    state = img['data']
+                    action = rl.predict(state)
+                    basket_key = list(self.baskets.keys())[action]
+                    correct_label = img['label']
+                    reward = 1 if basket_key in correct_label else -1
+                    # print('Predict item ' + str(img['i_id']) + ' with type ' + str(img['type']) + ': ' + str(reward))
+                    test_rewards.append(1 if reward == 1 else 0)
+                test_accuracy = float(sum(test_rewards)) / float(len(test_rewards))
+
+                if i_episode % 10 == 0:
+                    print('Epsisode ' + str(i_episode) + ' Train Accuracy: ' + str(
+                        train_accuracy) + ' Test Accuracy: ' + str(test_accuracy))
+
+            # save the model
+            tf.train.write_graph(sess.graph_def, './checkpoint_dir', 'model' + str(self.user.get_pid()) + '.pbtxt',
+                                 as_text=True)
+
+            saver = tf.train.Saver()
+            saver.save(sess, './checkpoint_dir/model' + str(self.user.get_pid()))
+
+            baskets = {str(k): v for k, v in self.baskets.items()}
+            model_info = {
+                'update_time': update_time,
+                'baskets': baskets
+            }
+
+            json_str = json.dumps(model_info)
+            with open('./checkpoint_dir/model' + str(self.user.get_pid()) + '.json', 'w') as json_file:
+                json_file.write(json_str)
+
+            # rewards = []
+            # for i, img in enumerate(train):
+            #     state = img['data']
+            #     action = rl.predict(state)
+            #     basket_key = list(self.baskets.keys())[action]
+            #     correct_label = img['label']
+            #     reward = 1 if basket_key in correct_label else -1
+            #     # print('Predict item ' + str(img['i_id']) + ' with type ' + str(img['type']) + ': ' + str(reward))
+            #     rewards.append(1 if reward == 1 else 0)
+            # print('Accuracy: ' + str(sum(rewards) / float(len(rewards))))
 
         print('FINISH')
         return (best_results, best_accuracy)
+
+    def test_with_dqn(self):
+        p_id = self.user.get_pid()
+        self.images_data = self.dataloader.image_aug()
+        images = self.images_data[p_id]
+        tf.reset_default_graph()
+
+        rewards = []
+        with tf.Session() as sess:
+            # load model
+
+            saver = tf.train.import_meta_graph('./checkpoint_dir/model' + str(p_id) + '.meta')
+            saver.restore(sess, tf.train.latest_checkpoint('./checkpoint_dir'))
+            # tf.train.write_graph(sess.graph_def, './checkpoint_dir', 'model.pbtxt', as_text=True)
+
+            with open('./checkpoint_dir/model' + str(p_id) + '.json', 'r') as json_file:
+                model_info = json.load(json_file)
+
+            self.baskets = {int(k): v for k, v in model_info['baskets'].items()}
+            update_time = model_info['update_time']
+
+            rl = DQN(sess=sess, epsilon=0)
+            rl.reload_tensor(update_time)
+
+            for i, img in enumerate(images):
+                state = img['data']
+                action = rl.predict(state)
+                basket_key = list(self.baskets.keys())[action]
+                correct_label = img['label']
+                reward = 1 if basket_key in correct_label else -1
+                print('Predict item ' + str(img['i_id']) + ' with type ' + str(img['type']) + ': ' + str(reward))
+                rewards.append(1 if reward == 1 else 0)
+            print('Accuracy: ' + str(sum(rewards) / float(len(rewards))))
