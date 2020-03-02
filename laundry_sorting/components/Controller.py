@@ -234,20 +234,62 @@ class Controller:
         plt.close()
 
     def train_with_dqn(self):
-        self.img_dict = {
-            0: 'og',
-            1: 'ud',
-            2: 'lr',
-            3: 'affine',
-            4: 'rot1',
-            5: 'rot2',
-            6: 'scale',
-            7: 'blur',
-            8: 'add',
-            9: 'com1',
-            10: 'com2',
-            11: 'com3'
-        }
+        episode = 5000
+        self.images_data = self.dataloader.image_aug()
+        all_images = []
+        for p_id in range(1, 31):
+            images = self.images_data[p_id]
+            all_images.extend(images)
+
+        tf.reset_default_graph()
+        with tf.Session() as sess:
+            rl = DQN(
+                sess=sess,
+                s_dim=self.config.state_dim,
+                a_dim=len(self.baskets),
+                batch_size=int(50 * len(self.img_dict)),
+                gamma=0,
+                lr=0.00001,
+                epsilon=0.1,
+                replace_target_iter=int(100 * len(self.img_dict))
+            )
+
+            tf.global_variables_initializer().run()
+
+            for i_episode in range(1, episode + 1):
+
+                train_rewards = []
+                for i, img in enumerate(all_images):
+                    state = img['data']
+                    action = rl.choose_action(state)
+                    # print(action)
+                    # TODO -random set next state
+                    next_state = all_images[(i + 1) % len(all_images)]['data']
+
+                    basket_key = list(self.baskets.keys())[action]
+                    correct_label = img['label']
+                    reward = 1 if basket_key in correct_label else -1
+                    # print(reward)
+                    train_rewards.append(1 if reward == 1 else 0)
+
+                    done = False
+                    rl.store_transition_and_learn(state, action, reward, next_state, done)
+
+                train_accuracy = float(sum(train_rewards)) / float(len(train_rewards))
+                if not best_accuracy or train_accuracy > best_accuracy:
+                    best_results = train_rewards
+                    best_accuracy = train_accuracy
+
+                if i_episode % 10 == 0:
+                    print('Epsisode ' + str(i_episode) + ' Train Accuracy: ' + str(
+                        train_accuracy))
+
+            # save the model
+            tf.train.write_graph(sess.graph_def, './checkpoint_dir', 'model_pre_trained' + '.pbtxt',
+                                 as_text=True)
+
+            saver = tf.train.Saver()
+            saver.save(sess, './checkpoint_dir/model_pre_trained')
 
     def apply_with_dqn(self):
         episode = 300
@@ -264,11 +306,11 @@ class Controller:
                 sess=sess,
                 s_dim=self.config.state_dim,
                 a_dim=len(self.baskets),
-                batch_size=int(0.1 * len(self.img_dict)),
+                batch_size=int(5 * len(self.img_dict)),
                 gamma=0,
                 lr=0.00001,
                 epsilon=0.1,
-                replace_target_iter=int(0.2 * len(self.img_dict))
+                replace_target_iter=int(10 * len(self.img_dict))
             )
             tf.global_variables_initializer().run()
 

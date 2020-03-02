@@ -147,8 +147,7 @@ def test():
     # print(accuracy)
 
     controller = Controller(Config())
-    controller.set_user(1)
-    controller.apply_with_dqn()
+    controller.train_with_dqn()
     # controller.test_with_dqn()
 
 
