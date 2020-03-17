@@ -85,6 +85,7 @@ class TDModel:
                 # robot.put(random_label)
 
                 # Choose next label for next cloth
+                # TODO - Next state 不应该是i_id + 1
                 next_state = None
                 if i_id + 1 in clothes:
                     next_cloth = clothes[i_id + 1]

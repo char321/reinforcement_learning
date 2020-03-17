@@ -5,40 +5,45 @@ class Config:
     def __init__(self):
         self.num = 30
 
-        self.model_list = ['Sarsa', 'QLearning']
+        self.model_list = ['Sarsa', 'QLearning', 'DQN']
         self.noi_list = [2000]  # [1000, 10000, 20000, 50000]
         self.nop_list = [50, 100, 500]
         self.reward_scale_list = [1, 2, 5]
-        self.alpha_list = [0.1, 0.3, 0.5, 0.7]
+        self.train_alpha_list = [0.1, 0.3, 0.5, 0.7]
+        self.update_alpha_list = [0.1, 0.3, 0.5, 0.7]
         self.gamma_list = [0]  # [0, 0.3, 0.5, 0.7]
         self.epsilon_list = [0.1]  # [0.1, 0.2]
         self.correct_scale_list = [1, 2, 3, 5]  # [1, 2, 3, 5, 10]
         self.incorrect_scale_list = [0.5, 1]  # [0.5, 1, 2, 3]
 
-        self.model_list = ['Sarsa', 'QLearning']
+        self.model_list = ['Sarsa', 'QLearning', 'DQN']
         self.noi_list = [2000]  # [1000, 10000, 20000, 50000]
-        self.nop_list = [50, 100]
-        self.reward_scale_list = [1, 2]
-        self.alpha_list = [0.3, 0.5, 0.7]
+        self.nop_list = [50]
+        self.reward_scale_list = [1]
+        self.train_alpha_list = [0.05]  # [0.05, 0.1, 0.3, 0.5, 0.7]
+        self.update_alpha_list = [0.05, 0.1, 0.3, 0.5, 0.7]
         self.gamma_list = [0]  # [0, 0.3, 0.5, 0.7]
         self.epsilon_list = [0.1]  # [0.1, 0.2]
-        self.correct_scale_list = [1, 3, 5]  # [1, 2, 3, 5, 10]
-        self.incorrect_scale_list = [0.5, 1]  # [0.5, 1, 2, 3]
+        self.correct_scale_list = [1, 2, 3, 5]  # [1, 2, 3, 5, 10]
+        self.incorrect_scale_list = [0.5, 1, 2]  # [0.5, 1, 2, 3]
+
+        # TODO - parameter for DQN
+        self.state_dim = [None, 400, 300, 3]
 
         # Model
-        self.model = self.model_list[1]
+        self.model = self.model_list[2]
         # TODO - gamma = 0?
 
         # Training
         self.noi = 2000
-        self.reward_scale = 2
-        self.train_alpha = 0.1
+        self.reward_scale = 1
+        self.train_alpha = 0.05
         self.train_gamma = 0
         self.train_epsilon = 0.1
 
         # Updating
         self.nop = 50  # number of training using a simple sorting behaviour
-        self.update_alpha = 0.3
+        self.update_alpha = 0.5
         self.update_gamma = 0
         self.update_epsilon = 0.1
         self.correct_scale = 3
@@ -51,10 +56,10 @@ class Config:
                                                    self.noi_list,
                                                    self.nop_list,
                                                    self.reward_scale_list,
-                                                   self.alpha_list,
+                                                   self.train_alpha_list,
                                                    self.gamma_list,
                                                    self.epsilon_list,
-                                                   self.alpha_list,
+                                                   self.update_alpha_list,
                                                    self.gamma_list,
                                                    self.epsilon_list,
                                                    self.correct_scale_list,
@@ -79,4 +84,3 @@ class Config:
         self.incorrect_scale = parameter_list[11]
         self.correct_reward = self.reward_scale * self.correct_scale
         self.incorrect_reward = self.reward_scale * self.incorrect_scale
-
