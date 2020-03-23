@@ -234,13 +234,14 @@ class Controller:
         plt.close()
 
     def train_with_dqn(self):
-        episode = 5000
+        episode = 500
         self.images_data = self.dataloader.image_aug()
         all_images = []
         for p_id in range(1, 31):
             images = self.images_data[p_id]
             all_images.extend(images)
 
+        train, test = train_test_split(all_images, test_size=0.3)
         tf.reset_default_graph()
         with tf.Session() as sess:
             rl = DQN(
@@ -259,12 +260,12 @@ class Controller:
             for i_episode in range(1, episode + 1):
 
                 train_rewards = []
-                for i, img in enumerate(all_images):
+                for i, img in enumerate(train):
                     state = img['data']
                     action = rl.choose_action(state)
                     # print(action)
                     # TODO -random set next state
-                    next_state = all_images[(i + 1) % len(all_images)]['data']
+                    next_state = train[(i + 1) % len(train)]['data']
 
                     basket_key = list(self.baskets.keys())[action]
                     correct_label = img['label']
@@ -276,20 +277,28 @@ class Controller:
                     rl.store_transition_and_learn(state, action, reward, next_state, done)
 
                 train_accuracy = float(sum(train_rewards)) / float(len(train_rewards))
-                if not best_accuracy or train_accuracy > best_accuracy:
-                    best_results = train_rewards
-                    best_accuracy = train_accuracy
+
+                test_rewards = []
+                for i, img in enumerate(test):
+                    state = img['data']
+                    action = rl.predict(state)
+                    basket_key = list(self.baskets.keys())[action]
+                    correct_label = img['label']
+                    reward = 1 if basket_key in correct_label else -1
+                    # print('Predict item ' + str(img['i_id']) + ' with type ' + str(img['type']) + ': ' + str(reward))
+                    test_rewards.append(1 if reward == 1 else 0)
+                test_accuracy = float(sum(test_rewards)) / float(len(test_rewards))
 
                 if i_episode % 10 == 0:
                     print('Epsisode ' + str(i_episode) + ' Train Accuracy: ' + str(
-                        train_accuracy))
+                        train_accuracy) + ' Test Accuracy: ' + str(test_accuracy))
 
             # save the model
-            tf.train.write_graph(sess.graph_def, './checkpoint_dir', 'model_pre_trained' + '.pbtxt',
-                                 as_text=True)
-
-            saver = tf.train.Saver()
-            saver.save(sess, './checkpoint_dir/model_pre_trained')
+            # tf.train.write_graph(sess.graph_def, './checkpoint_dir', 'model_pre_trained' + '.pbtxt',
+            #                      as_text=True)
+            #
+            # saver = tf.train.Saver()
+            # saver.save(sess, './checkpoint_dir/model_pre_trained')
 
     def apply_with_dqn(self):
         episode = 300
@@ -330,6 +339,8 @@ class Controller:
                     reward = 1 if basket_key in correct_label else -1
                     # print(reward)
                     train_rewards.append(1 if reward == 1 else 0)
+
+                    emotion_level = self.user.get_emotion_level(reward == 1)
 
                     # print('Train with item ' + str(img['i_id']) + ' with type ' + str(img['type']))
                     if reward == -1:
