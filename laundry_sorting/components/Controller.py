@@ -6,13 +6,12 @@ import matplotlib.pyplot as plt
 from data_loader.DataLoader import DataLoader
 from models.TDModel import QLearningModel
 from models.TDModel import SarsaModel
-from models.DQN import DQN
+from models.DQN import Model
+from models.DQN import DQNAgent
 from components.User import User
 from components.Robot import Robot
 from sklearn.model_selection import train_test_split
-import tensorflow.compat.v1 as tf
-
-tf.disable_v2_behavior()
+import tensorflow as tf
 
 
 # persons
@@ -242,7 +241,7 @@ class Controller:
             all_images.extend(images)
 
         train, test = train_test_split(all_images, test_size=0.3)
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         with tf.Session() as sess:
             rl = DQN(
                 sess=sess,
@@ -301,7 +300,7 @@ class Controller:
             # saver.save(sess, './checkpoint_dir/model_pre_trained')
 
     def apply_with_dqn(self):
-        episode = 300
+        episode = 10
         update_time = 0
         self.images_data = self.dataloader.image_aug()
         images = self.images_data[self.user.get_pid()]
@@ -309,7 +308,7 @@ class Controller:
 
         best_results = None
         best_accuracy = None
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         with tf.Session() as sess:
             rl = DQN(
                 sess=sess,
@@ -421,7 +420,7 @@ class Controller:
         p_id = self.user.get_pid()
         self.images_data = self.dataloader.image_aug()
         images = self.images_data[p_id]
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
         rewards = []
         with tf.Session() as sess:
@@ -449,3 +448,33 @@ class Controller:
                 print('Predict item ' + str(img['i_id']) + ' with type ' + str(img['type']) + ': ' + str(reward))
                 rewards.append(1 if reward == 1 else 0)
             print('Accuracy: ' + str(sum(rewards) / float(len(rewards))))
+
+    def temp(self):
+        episode = 300
+        model = Model(3)
+        target_model = Model(3)
+        lr = 0.00001
+        gamma = 0
+        epsilon = 0.1
+        batch_size = int(5 * len(self.img_dict))
+        buffer_size = int(50 * len(self.img_dict))
+        img_size = (400, 300, 3)
+        target_update_iter = int(100 * len(self.img_dict))
+        start_learning = int(int(10 * len(self.img_dict)))
+
+        # agent = DQNAgent(model, target_model, lr, gamma, epsilon, batch_size, buffer_size, self.baskets, img_size,
+        #                  target_update_iter, start_learning)
+
+        agent = DQNAgent(model, target_model, lr, gamma, epsilon, 5, 100, self.baskets, (400, 300, 3),
+                         20, 10)
+
+        self.images_data = self.dataloader.image_aug()
+        all_images = []
+        for p_id in range(1, 31):
+            images = self.images_data[p_id]
+            all_images.extend(images)
+
+        train, test = train_test_split(all_images, test_size=0.1)
+        train, test = train_test_split(test, test_size=0.7)
+        agent.evalation(test)
+        agent.train(train, test, episode)
