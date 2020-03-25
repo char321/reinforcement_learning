@@ -5,6 +5,7 @@ class Config:
     def __init__(self):
         self.num = 30
 
+        # tuning
         self.model_list = ['Sarsa', 'QLearning', 'DQN']
         self.noi_list = [2000]  # [1000, 10000, 20000, 50000]
         self.nop_list = [50, 100, 500]
@@ -27,8 +28,56 @@ class Config:
         self.correct_scale_list = [1, 2, 3, 5]  # [1, 2, 3, 5, 10]
         self.incorrect_scale_list = [0.5, 1, 2]  # [0.5, 1, 2, 3]
 
-        # TODO - parameter for DQN
-        self.state_dim = [None, 400, 300, 3]
+        # basic parameter
+        self.baskets = {
+            1: 'white',
+            3: 'dark',
+            5: 'colour'
+        }
+
+        self.img_dict = {
+            0: 'og',
+            1: 'ud',
+            2: 'lr',
+            3: 'affine',
+            4: 'rot1',
+            5: 'rot2',
+            6: 'scale',
+            7: 'blur',
+            8: 'add',
+            9: 'com1',
+            10: 'com2',
+            11: 'com3'
+        }
+
+        # parameter for DQN
+        self.dqn_para = {
+            'episode': 300,
+            'state_dim': [None, 400, 300, 3],
+            'img_size': (400, 300, 3),
+            'action_dim': 3,
+            'lr': 0.00001,
+            'gamma': 0,
+            'epsilon': 0.1,
+            'batch_size': 8,
+            'buffer_size': 32,
+            'update_iter': 8,
+            'start_learning': 16
+        }
+
+        self.dqn_para = {
+            'episode': 5,
+            'state_dim': [None, 400, 300, 3],
+            'img_size': (400, 300, 3),
+            'action_dim': 3,
+            'lr': 0.01,
+            'gamma': 0,
+            'epsilon': 0.1,
+            'batch_size': 1,
+            'buffer_size': 3,
+            'update_iter': 1,
+            'start_learning': 1
+        }
 
         # Model
         self.model = self.model_list[2]

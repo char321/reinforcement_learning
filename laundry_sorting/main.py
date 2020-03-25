@@ -146,10 +146,17 @@ def test():
     # print(results)
     # print(accuracy)
 
-    controller = Controller(Config())
-    controller.train_with_dqn()
+    # controller = Controller(Config())
+    # controller.train_with_dqn()
     # controller.test_with_dqn()
 
+    # controller.set_user(1)
+    # user = controller.user
+
+
+    controller = Controller(Config())
+    controller.train_with_dqn()
+    # controller.temp()
 
 if '__main__' == __name__:
     # main()
