@@ -41,77 +41,55 @@ class Model(keras.Model):
 
 
 class DQNAgent:
-    # def __init__(self, sess, s_dim=None, a_dim=None, batch_size=None, gamma=None, lr=None, epsilon=None,
-    #              replace_target_iter=None):
-    #     self.sess = sess
-    #     self.s_dim = s_dim  # 状态维度
-    #     self.a_dim = a_dim  # one hot行为维度
-    #     self.gamma = gamma
-    #     self.lr = lr  # learning rate
-    #     self.epsilon = epsilon  # epsilon-greedy
-    #     self.replace_target_iter = replace_target_iter  # 经历C步后更新target参数
-    #
-    #     self.memory = Memory(batch_size, 5)
-    #     self.learn_step_counter = 0
-    #     self.update_time = 0
-    #     if s_dim:
+    def __init__(self, dqn_para, baskets):
+        # self.dqn_para = {
+        #     'episode': 300,
+        #     'state_dim': [None, 400, 300, 3],
+        #     'img_size': (400, 300, 3),
+        #     'action_dim': 3,
+        #     'lr': 0.00001,
+        #     'gamma': 0,
+        #     'epsilon': 0.1,
+        #     'batch_size': int(5 * len(self.img_dict)),
+        #     'buffer_size': int(50 * len(self.img_dict)),
+        #     'update_iter': int(100 * len(self.img_dict)),
+        #     'start_learning': int(int(10 * len(self.img_dict)))
+        # }
 
-    def __init__(self, model, target_model, learning_rate, gamma, epsilon, batch_size, buffer_size, baskets,
-                 img_size, target_update_iter, start_learning):
-        self.model = model
-        self.target_model = target_model
+        self.action_dim = dqn_para['action_dim']
+        self.model = Model(dqn_para['action_dim'])
+        self.target_model = Model(dqn_para['action_dim'])
+        # print(id(self.model), id(self.target_model))
 
-        print(id(self.model), id(self.target_model))
-
-        opt = optimizers.Adam(learning_rate=learning_rate)
+        opt = optimizers.Adam(learning_rate=dqn_para['lr'])
         self.model.compile(optimizer=opt, loss='mse')
 
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.batch_size = batch_size
-        self.buffer_size = buffer_size
+        self.gamma = dqn_para['gamma']
+        self.epsilon = dqn_para['epsilon']
+        self.batch_size = dqn_para['batch_size']
+        self.buffer_size = dqn_para['buffer_size']
         self.num_in_buffer = 0
 
         self.baskets = baskets
-        self.states = np.empty((self.buffer_size,) + img_size)
+        self.states = np.empty((self.buffer_size,) + dqn_para['img_size'])
         print(np.shape(self.states))
         self.actions = np.empty((self.buffer_size), dtype=np.int8)
         self.rewards = np.empty((self.buffer_size), dtype=np.float32)
         self.dones = np.empty((self.buffer_size), dtype=np.bool)
-        self.next_states = np.empty((self.buffer_size,) + img_size)
+        self.next_states = np.empty((self.buffer_size,) + dqn_para['img_size'])
         self.next_idx = 0
-        self.target_update_iter = target_update_iter
-        self.start_learning = start_learning
+        self.target_update_iter = dqn_para['update_iter']
+        self.start_learning = dqn_para['start_learning']
 
     def update_actions(self):
-        self.update_time += 1
-        self.a_dim += 1
-        self.memory.increase_action_dim()
-
-        # evaluate net
-        self.q_eval_z = self.update_net(self.s, 'eval_net_' + str(self.update_time))
-        # target net
-        self.q_target_z = self.update_net(self.s_, 'target_net_' + str(self.update_time))
-
-        # y = r + gamma * max(q^)
-        self.q_target = self.r + self.gamma * tf.reduce_max(self.q_target_z, axis=1, keepdims=True) * (1 - self.done)
-        self.q_eval = tf.reduce_sum(self.a * self.q_eval_z, axis=1, keepdims=True)
-        # a_mask = tf.cast(self.a, tf.bool)
-        # q_eval = tf.expand_dims(tf.boolean_mask(self.q_eval_z, a_mask), 1)
-
-        self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
-        self.optimizer = tf.train.AdamOptimizer(self.lr, name='opt').minimize(self.loss)
-
-        param_target = tf.global_variables(scope='target_net_' + str(self.update_time))
-        param_eval = tf.global_variables(scope='eval_net_' + str(self.update_time))
-
-        # redefine the copy operation
-        self.target_replace_ops = [tf.assign(t, e) for t, e in zip(param_target, param_eval)]
+        # TODO
+        pass
 
     def train(self, train, test, episode):
         # initialize the initial observation of the agent
         for i_episode in range(1, episode + 1):
             loss = None
+            batch_num = 0
             for i, img in enumerate(train):
                 state = img['data']
                 state = tf.cast(state, tf.float32)
@@ -130,19 +108,19 @@ class DQNAgent:
                 if i > self.start_learning:  # start learning
                     losses = self.train_step()
                     loss = losses if not loss else min(loss, losses)
-
+                    # print('Batch ' + str(batch_num) + 'Loss: ' + str(losses))
+                    batch_num += 1
                 if i % self.target_update_iter == 0:
                     self.update_target_model()
 
                 # state = None if done else next_state
 
-            if i_episode % 10 == 0:
-                train_rewards = self.evalation(train)
-                train_acc = sum(train_rewards == 1) / len(train_rewards)
-                test_rewards = self.evalation(test)
-                test_acc = sum(test_rewards == 1) / len(test_rewards)
-                print('Episode ' + str(i_episode) + 'Loss: ' + str(loss) + ' Train Accuracy: ' + str(
-                    train_acc) + ' Test Accuracy: ' + str(test_acc))
+            train_rewards = self.evalation(train)
+            train_acc = sum(train_rewards == 1) / len(train_rewards)
+            test_rewards = self.evalation(test)
+            test_acc = sum(test_rewards == 1) / len(test_rewards)
+            print('Episode ' + str(i_episode) + 'Loss: ' + str(loss) + ' Train Accuracy: ' +
+                  str(train_acc) + ' Test Accuracy: ' + str(test_acc))
 
     def train_step(self):
         idxes = self.sample(self.batch_size)
@@ -178,11 +156,6 @@ class DQNAgent:
 
     # store transitions into replay butter
     def store_transition(self, state, action, reward, next_state, done):
-        # n_idx = self.next_idx % self.buffer_size
-        # print(n_idx)
-        # print(np.shape(self.states))
-        # print(np.shape(state))
-        # print(np.shape(self.states[n_idx]))
         self.states[self.next_idx] = state
         self.actions[self.next_idx] = action
         self.rewards[self.next_idx] = reward
@@ -205,8 +178,7 @@ class DQNAgent:
     # e-greedy
     def get_action(self, best_action):
         if np.random.rand() < self.epsilon:
-            # TODO
-            return best_action
+            return np.random.randint(self.action_dim)
         return best_action
 
     # assign the current network parameters to target network

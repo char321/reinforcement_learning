@@ -155,7 +155,8 @@ def test():
 
 
     controller = Controller(Config())
-    controller.temp()
+    controller.train_with_dqn()
+    # controller.temp()
 
 if '__main__' == __name__:
     # main()
