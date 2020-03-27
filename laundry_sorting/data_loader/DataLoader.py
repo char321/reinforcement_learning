@@ -250,7 +250,7 @@ class DataLoader:
         return persons_images
 
     # load images and do the image augmentation to generate more data
-    def image_aug(self):
+    def image_aug(self, isCommon=False):
         aug_images = {}
         p_ids = set(self.sorts['p_id'])
         n = {}
@@ -261,12 +261,23 @@ class DataLoader:
             images = []
 
             for i_id in i_ids:
+                if isCommon and i_id > 16:
+                    break
                 image_path = self.base_path + '/new_images/img' + str(i_id) + '.jpg'
                 orig = cv2.imread(image_path)
 
                 if orig is None:
                     n[str(i_id)] = image_path
                     continue
+
+                # Normalisation
+                r, g, b = orig[:, :, 0], orig[:, :, 1], orig[:, :, 2]
+
+                r = 255 * (r - np.min(r)) / (np.max(r) - np.min(r))
+                g = 255 * (g - np.min(g)) / (np.max(g) - np.min(g))
+                b = 255 * (b - np.min(b)) / (np.max(b) - np.min(b))
+
+                orig = np.dstack((r, g, b))
 
                 # Image Augmentation
                 ia.seed(3)

@@ -222,20 +222,22 @@ class Controller:
 
         agent = DQNAgent(dqn_para, self.baskets)
 
-        self.images_data = self.dataloader.image_aug()
+        self.images_data = self.dataloader.image_aug(isCommon=True)
 
         # print(len(self.images_data))
 
         all_images = []
         for p_id in range(1, 31):
             images = self.images_data[p_id]
-            # print(len(images))
+            np.random.shuffle(images)
             all_images.extend(images)
 
-        train, all_images = train_test_split(all_images, test_size=0.002)
+        np.random.shuffle(all_images)
+        #
+        # train, all_images = train_test_split(all_images, test_size=0.002)
         train, test = train_test_split(all_images, test_size=0.3)
-        # print(np.shape(train))
-        agent.evalation(test)
+        print(np.shape(train))
+        agent.evaluation(test)
         print('start train')
         agent.train(train, test, episode)
 

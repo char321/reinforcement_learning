@@ -56,28 +56,28 @@ class Config:
             'state_dim': [None, 400, 300, 3],
             'img_size': (400, 300, 3),
             'action_dim': 3,
-            'lr': 0.00001,
+            'lr': 0.000001,
             'gamma': 0,
             'epsilon': 0.1,
-            'batch_size': 8,
-            'buffer_size': 32,
-            'update_iter': 8,
-            'start_learning': 16
+            'batch_size': 32,
+            'buffer_size': 100,
+            'update_iter': 32,
+            'start_learning': 50
         }
 
-        self.dqn_para = {
-            'episode': 5,
-            'state_dim': [None, 400, 300, 3],
-            'img_size': (400, 300, 3),
-            'action_dim': 3,
-            'lr': 0.01,
-            'gamma': 0,
-            'epsilon': 0.1,
-            'batch_size': 1,
-            'buffer_size': 3,
-            'update_iter': 1,
-            'start_learning': 1
-        }
+        # self.dqn_para = {
+        #     'episode': 5,
+        #     'state_dim': [None, 400, 300, 3],
+        #     'img_size': (400, 300, 3),
+        #     'action_dim': 3,
+        #     'lr': 0.01,
+        #     'gamma': 0,
+        #     'epsilon': 0.1,
+        #     'batch_size': 1,
+        #     'buffer_size': 3,
+        #     'update_iter': 5,
+        #     'start_learning': 5
+        # }
 
         # Model
         self.model = self.model_list[2]

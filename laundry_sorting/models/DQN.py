@@ -14,15 +14,36 @@ from functools import reduce
 class Model(keras.Model):
     def __init__(self, a_dim):
         super().__init__(name='basic_dqn')
-        self.l1 = layers.Conv2D(input_shape=(400, 300, 3), filters=32, kernel_size=(8, 8), strides=(4, 4),
-                                padding='valid', activation='relu', kernel_initializer='he_uniform',
-                                bias_initializer='zeros')
-        self.l2 = layers.Conv2D(filters=64, kernel_size=(4, 4), strides=(2, 2), padding='valid', activation='relu',
-                                kernel_initializer='he_uniform', bias_initializer='zeros')
-        self.l3 = layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='valid', activation='relu',
-                                kernel_initializer='he_uniform', bias_initializer='zeros')
+        self.l1 = tf.keras.Sequential(
+            [
+                layers.Conv2D(input_shape=(400, 300, 3), filters=32, kernel_size=(8, 8), strides=(4, 4),
+                              padding='valid', activation='relu', kernel_initializer='he_uniform',
+                              bias_initializer='zeros'),
+                # layers.BatchNormalization()
+            ]
+        )
+        self.l2 = tf.keras.Sequential(
+            [
+                layers.Conv2D(filters=64, kernel_size=(4, 4), strides=(2, 2), padding='valid', activation='relu',
+                                kernel_initializer='he_uniform', bias_initializer='zeros'),
+                # layers.BatchNormalization()
+            ]
+        )
+
+        self.l3 = tf.keras.Sequential(
+            [
+                layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='valid', activation='relu',
+                                kernel_initializer='he_uniform', bias_initializer='zeros'),
+                # layers.BatchNormalization()
+            ]
+        )
         self.l3_flat = layers.Flatten()
-        self.fc1 = layers.Dense(512, activation='relu', kernel_initializer='he_uniform', bias_initializer='zeros')
+        self.fc1 = tf.keras.Sequential(
+            [
+                layers.Dense(512, activation='relu', kernel_initializer='he_uniform', bias_initializer='zeros'),
+                # layers.BatchNormalization()
+            ]
+        )
         self.logits = layers.Dense(a_dim, kernel_initializer='he_uniform', bias_initializer='zeros', name='q_values')
 
     def call(self, inputs):
@@ -115,9 +136,9 @@ class DQNAgent:
 
                 # state = None if done else next_state
 
-            train_rewards = self.evalation(train)
+            train_rewards = self.evaluation(train)
             train_acc = sum(train_rewards == 1) / len(train_rewards)
-            test_rewards = self.evalation(test)
+            test_rewards = self.evaluation(test)
             test_acc = sum(test_rewards == 1) / len(test_rewards)
             print('Episode ' + str(i_episode) + 'Loss: ' + str(loss) + ' Train Accuracy: ' +
                   str(train_acc) + ' Test Accuracy: ' + str(test_acc))
@@ -136,10 +157,11 @@ class DQNAgent:
             target_f[i][val] = target_q[i]
 
         losses = self.model.train_on_batch(s_batch, target_f)
+        # losses = self.model.fit(s_batch, target_f)
 
         return losses
 
-    def evalation(self, data):
+    def evaluation(self, data):
         # one episode until done
         rewards = []
         for i, img in enumerate(data):
