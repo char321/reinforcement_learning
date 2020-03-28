@@ -154,22 +154,23 @@ def test():
     # controller.set_user(1)
     # user = controller.user
 
-    # controller = Controller(Config())
-    # controller.train_with_dqn()
+    controller = Controller(Config())
+    controller.train_with_dqn()
     # controller.temp()
     pass
 
 
 if '__main__' == __name__:
     # main()
-    # test()
+    test()
 
-    import matplotlib
-
-    print('!!')
-    dataloader = DataLoader()
-    a = dataloader.image_aug()
-    print(a)
-    print(np.mean(a))
-    print(np.shape(a))
-    matplotlib.image.imsave('og.jpg', a)
+    # import matplotlib
+    #
+    # print('!!')
+    # dataloader = DataLoader()
+    # dataloader.load_all_data()
+    # a = dataloader.image_aug()
+    # print(a)
+    # print(np.mean(a))
+    # print(np.shape(a))
+    # matplotlib.image.imsave('og.jpg', a)

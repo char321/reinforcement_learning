@@ -60,8 +60,8 @@ class Config:
             'gamma': 0,
             'epsilon': 0.1,
             'batch_size': 32,
-            'buffer_size': 100,
-            'update_iter': 32,
+            'buffer_size': 500,
+            'update_iter': 200,
             'start_learning': 50
         }
 

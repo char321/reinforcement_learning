@@ -25,7 +25,7 @@ class Model(keras.Model):
         self.l2 = tf.keras.Sequential(
             [
                 layers.Conv2D(filters=64, kernel_size=(4, 4), strides=(2, 2), padding='valid', activation='relu',
-                                kernel_initializer='he_uniform', bias_initializer='zeros'),
+                              kernel_initializer='he_uniform', bias_initializer='zeros'),
                 # layers.BatchNormalization()
             ]
         )
@@ -33,7 +33,7 @@ class Model(keras.Model):
         self.l3 = tf.keras.Sequential(
             [
                 layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='valid', activation='relu',
-                                kernel_initializer='he_uniform', bias_initializer='zeros'),
+                              kernel_initializer='he_uniform', bias_initializer='zeros'),
                 # layers.BatchNormalization()
             ]
         )
@@ -77,6 +77,8 @@ class DQNAgent:
         #     'start_learning': int(int(10 * len(self.img_dict)))
         # }
 
+        np.random.seed(3)
+
         self.action_dim = dqn_para['action_dim']
         self.model = Model(dqn_para['action_dim'])
         self.target_model = Model(dqn_para['action_dim'])
@@ -114,10 +116,12 @@ class DQNAgent:
             for i, img in enumerate(train):
                 state = img['data']
                 state = tf.cast(state, tf.float32)
+                state = self.normalisation(state)  # Normalisation
                 best_action, q_values = self.model.action_value(state[None])
                 action = self.get_action(best_action)  # get the real action
 
                 next_state = train[(i + 1) % len(train)]['data']
+                next_state = self.normalisation(next_state)  # Normalisation
                 basket_key = list(self.baskets.keys())[action]
                 correct_label = img['label']
                 reward = 1 if basket_key in correct_label else -1
@@ -140,7 +144,7 @@ class DQNAgent:
             train_acc = sum(train_rewards == 1) / len(train_rewards)
             test_rewards = self.evaluation(test)
             test_acc = sum(test_rewards == 1) / len(test_rewards)
-            print('Episode ' + str(i_episode) + 'Loss: ' + str(loss) + ' Train Accuracy: ' +
+            print('Episode ' + str(i_episode) + ' Loss: ' + str(loss) + ' Train Accuracy: ' +
                   str(train_acc) + ' Test Accuracy: ' + str(test_acc))
 
     def train_step(self):
@@ -167,6 +171,7 @@ class DQNAgent:
         for i, img in enumerate(data):
             state = img['data']
             state = tf.cast(state, tf.float32)
+            state = self.normalisation(state)  # Normalisation
             action, q_values = self.model.action_value(state[None])
             act_action, act_q_values = self.target_model.action_value(state[None])
             basket_key = list(self.baskets.keys())[action]
@@ -215,3 +220,13 @@ class DQNAgent:
 
     def e_decay(self):
         self.epsilon *= self.epsilon_decay
+
+    def normalisation(self, orig):
+        r, g, b = orig[:, :, 0], orig[:, :, 1], orig[:, :, 2]
+
+        r = 255 * (r - np.min(r)) / (np.max(r) - np.min(r))
+        g = 255 * (g - np.min(g)) / (np.max(g) - np.min(g))
+        b = 255 * (b - np.min(b)) / (np.max(b) - np.min(b))
+
+        orig = np.dstack((r, g, b))
+        return orig

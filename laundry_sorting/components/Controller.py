@@ -35,6 +35,7 @@ class Controller:
         self.set_model()
         self.user = None
         self.default_policy = None
+        np.random.seed(3)
 
     def set_model(self):
         if self.config.model == 'QLearning':
