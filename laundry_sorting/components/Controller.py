@@ -235,7 +235,7 @@ class Controller:
 
         np.random.shuffle(all_images)
 
-        train, all_images = train_test_split(all_images, test_size=0.002)
+        # train, all_images = train_test_split(all_images, test_size=0.002)
         train, test = train_test_split(all_images, test_size=0.3)
         print(np.shape(train))
         agent.evaluation(test)
@@ -248,24 +248,20 @@ class Controller:
         print('Start train...')
         agent.train(train, test, episode)
 
-        agent.model.save_weights('./checkpoints/my_checkpoint')
-        # agent.model.save('my_model.h5')
-
-        newmodel = Model(3)
-        newmodel.load_weights('./checkpoints/my_checkpoint')
-
-        neweagent = DQNAgent(dqn_para, self.baskets)
-        neweagent.model = newmodel
-        neweagent.target_model = newmodel
-
-        print(agent.evaluation(train))
-        print(neweagent.evaluation(train))
-        print(agent.evaluation(test))
-        print(neweagent.evaluation(test))
-
-        # TODO
-        # save & reload
-        # updadte network & save & reload
+        # agent.model.save_weights('./checkpoints/my_checkpoint')
+        # # agent.model.save('my_model.h5')
+        #
+        # newmodel = Model(3)
+        # newmodel.load_weights('./checkpoints/my_checkpoint')
+        #
+        # neweagent = DQNAgent(dqn_para, self.baskets)
+        # neweagent.model = newmodel
+        # neweagent.target_model = newmodel
+        #
+        # print(agent.evaluation(train))
+        # print(neweagent.evaluation(train))
+        # print(agent.evaluation(test))
+        # print(neweagent.evaluation(test))
 
     def apply_with_dqn(self, p_id):
         self.set_user(p_id)
@@ -276,7 +272,7 @@ class Controller:
         all_images.extend(images)
         np.random.shuffle(all_images)
 
-        train, all_images = train_test_split(all_images, test_size=0.2)
+        # train, all_images = train_test_split(all_images, test_size=0.05)
         train, test = train_test_split(all_images, test_size=0.3)
         print(np.shape(train))
 
@@ -359,3 +355,15 @@ class Controller:
                 best_train_acc = train_acc
                 best_test_acc = test_acc
                 agent.save_model(p_id)
+
+                model_info = dqn_para
+                model_info['baskets'] = str(self.baskets)
+                model_info['best_train_acc'] = str(best_train_acc)
+                model_info['best_test_acc'] = str(best_test_acc)
+                model_info['episode'] = i_episode
+                for s in model_info.keys():
+                    print(s)
+                    print(type(s))
+                json_str = json.dumps(model_info)
+                with open('./checkpoints/' + str(p_id) + '/model_info.json', 'w') as json_file:
+                    json_file.write(json_str)

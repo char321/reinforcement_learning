@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import tensorflow as tf
+import json
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
@@ -163,6 +164,15 @@ class DQNAgent:
                 best_test_acc = test_acc
                 self.save_model()
 
+                model_info = config.dqn_para
+                model_info['baskets'] = str(self.baskets)
+                model_info['best_train_acc'] = str(best_train_acc)
+                model_info['best_test_acc'] = str(best_test_acc)
+                model_info['episode'] = i_episode
+                json_str = json.dumps(model_info)
+                with open('./checkpoints/pre/model_info.json', 'w') as json_file:
+                    json_file.write(json_str)
+
     def train_step(self):
         idxes = self.sample(self.batch_size)
         s_batch = self.states[idxes]
@@ -287,22 +297,23 @@ class DQNAgent:
 
     def save_model(self, p_id=None):
         if p_id == None:
-            self.model.save_weights('./checkpoints_eval/checkpoint')
-            self.target_model.save_weights('./checkpoints_target/checkpoint')
+            self.model.save_weights('./checkpoints/pre/checkpoints_eval/checkpoint')
+            self.target_model.save_weights('./checkpoints/pre/checkpoints_target/checkpoint')
         else:
-            self.model.save_weights('./checkpoints_eval/' + str(p_id) + '/checkpoint_')
-            self.target_model.save_weights('./checkpoints_target/' + str(p_id) + '/checkpoint_')
+            self.model.save_weights('./checkpoints/' + str(p_id) + '/checkpoints_eval/checkpoint')
+            self.target_model.save_weights('./checkpoints/' + str(p_id) + '/checkpoints_target/checkpoint')
 
     def load_model(self, p_id=None):
         if p_id == None:
-            self.model.load_weights('./checkpoints_eval/checkpoint')
-            self.target_model.load_weights('./checkpoints_target/checkpoint')
+            self.model.load_weights('./checkpoints/pre/checkpoints_eval/checkpoint')
+            self.target_model.load_weights('./checkpoints/pre/checkpoints_target/checkpoint')
         else:
-            self.model.load_weights('./checkpoints_eval/' + str(p_id) + '/checkpoint_')
-            self.target_model.load_weights('./checkpoints_target/' + str(p_id) + '/checkpoint_')
+            self.model.load_weights('./checkpoints/' + str(p_id) + '/checkpoints_eval/checkpoint')
+            self.target_model.load_weights('./checkpoints/' + str(p_id) + '/checkpoints_target/checkpoint')
 
         self.model.build((None,) + config.dqn_para['img_size'])
         self.target_model.build((None,) + config.dqn_para['img_size'])
+
         print('---load---')
         self.model.summary()
         self.target_model.summary()
