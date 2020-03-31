@@ -52,7 +52,7 @@ class Config:
 
         # parameter for DQN
         self.dqn_para = {
-            'episode': 300,
+            'episode': 50,
             'state_dim': [None, 400, 300, 3],
             'img_size': (400, 300, 3),
             'action_dim': 3,
@@ -62,11 +62,31 @@ class Config:
             'batch_size': 32,
             'buffer_size': 500,
             'update_iter': 200,
-            'start_learning': 50
+            'start_learning': 50,
+            'initializer': ['random_uniform', 'zeros'],
+            'optimizer': 'SGD',
+            'momentum': 0.9
+        }
+
+        self.apply_dqn_para = {
+            'episode': 100,
+            'state_dim': [None, 400, 300, 3],
+            'img_size': (400, 300, 3),
+            'action_dim': 3,
+            'lr': 0.00001,
+            'gamma': 0,
+            'epsilon': 0.1,
+            'batch_size': 16,
+            'buffer_size': 200,
+            'update_iter': 100,
+            'start_learning': 32,
+            'initializer': ['random_uniform', 'zeros'],
+            'optimizer': 'SGD',
+            'momentum': 0.9
         }
 
         # self.dqn_para = {
-        #     'episode': 5,
+        #     'episode': 20,
         #     'state_dim': [None, 400, 300, 3],
         #     'img_size': (400, 300, 3),
         #     'action_dim': 3,
@@ -76,8 +96,13 @@ class Config:
         #     'batch_size': 1,
         #     'buffer_size': 3,
         #     'update_iter': 5,
-        #     'start_learning': 5
+        #     'start_learning': 5,
+        #     'initializer': ['random_uniform', 'zeros'],
+        #     'optimizer': 'SGD',
+        #     'momentum': 0.9
         # }
+        #
+        # self.apply_dqn_para = self.dqn_para
 
         # Model
         self.model = self.model_list[2]

@@ -156,6 +156,8 @@ def test():
 
     controller = Controller(Config())
     controller.train_with_dqn()
+    for i in range(1, 31):
+        controller.apply_with_dqn(i)
     # controller.temp()
     pass
 

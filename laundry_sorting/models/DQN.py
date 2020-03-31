@@ -2,30 +2,34 @@ import gym
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-import tensorflow.keras.layers as layers
-import tensorflow.keras.optimizers as optimizers
+from tensorflow.keras import layers
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import SGD
+from components.Config import Config
 from models.Memory import *
 from functools import reduce
 
+config = Config()
+kernel_initializer = config.dqn_para['initializer'][0]
+bias_initializer = config.dqn_para['initializer'][1]
 
-# kernel_initializer = tf.truncated_normal_initializer(0, 0.02)
-# bias_initializer = tf.constant_initializer(0)
 
 class Model(keras.Model):
     def __init__(self, a_dim):
-        super().__init__(name='basic_dqn')
+        super().__init__(name='basic_dqn_' + str(a_dim))
+        self.a_dim = a_dim
         self.l1 = tf.keras.Sequential(
             [
                 layers.Conv2D(input_shape=(400, 300, 3), filters=32, kernel_size=(8, 8), strides=(4, 4),
-                              padding='valid', activation='relu', kernel_initializer='he_uniform',
-                              bias_initializer='zeros'),
+                              padding='valid', activation='relu', kernel_initializer=kernel_initializer,
+                              bias_initializer=bias_initializer),
                 # layers.BatchNormalization()
             ]
         )
         self.l2 = tf.keras.Sequential(
             [
                 layers.Conv2D(filters=64, kernel_size=(4, 4), strides=(2, 2), padding='valid', activation='relu',
-                              kernel_initializer='he_uniform', bias_initializer='zeros'),
+                              kernel_initializer=kernel_initializer, bias_initializer=bias_initializer),
                 # layers.BatchNormalization()
             ]
         )
@@ -33,18 +37,22 @@ class Model(keras.Model):
         self.l3 = tf.keras.Sequential(
             [
                 layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='valid', activation='relu',
-                              kernel_initializer='he_uniform', bias_initializer='zeros'),
+                              kernel_initializer=kernel_initializer, bias_initializer=bias_initializer),
                 # layers.BatchNormalization()
             ]
         )
         self.l3_flat = layers.Flatten()
         self.fc1 = tf.keras.Sequential(
             [
-                layers.Dense(512, activation='relu', kernel_initializer='he_uniform', bias_initializer='zeros'),
+                layers.Dense(512, activation='relu', kernel_initializer=kernel_initializer,
+                             bias_initializer=bias_initializer),
                 # layers.BatchNormalization()
             ]
         )
-        self.logits = layers.Dense(a_dim, kernel_initializer='he_uniform', bias_initializer='zeros', name='q_values')
+        self.logits = layers.Dense(a_dim, kernel_initializer=kernel_initializer, bias_initializer=bias_initializer,
+                                   name='q_values')
+
+    # def build(self, inputs_shape):
 
     def call(self, inputs):
         x = self.l1(inputs)
@@ -84,7 +92,9 @@ class DQNAgent:
         self.target_model = Model(dqn_para['action_dim'])
         # print(id(self.model), id(self.target_model))
 
-        opt = optimizers.Adam(learning_rate=dqn_para['lr'])
+        opt = Adam(learning_rate=dqn_para['lr'])
+        if config.dqn_para['optimizer'] == 'SGD':
+            opt = SGD(learning_rate=dqn_para['lr'], momentum=dqn_para['momentum'])
         self.model.compile(optimizer=opt, loss='mse')
 
         self.gamma = dqn_para['gamma']
@@ -108,8 +118,10 @@ class DQNAgent:
         # TODO
         pass
 
-    def train(self, train, test, episode):
+    def train(self, train, test, episode, is_apply=False):
         # initialize the initial observation of the agent
+        best_train_acc = 0
+        best_test_acc = 0
         for i_episode in range(1, episode + 1):
             loss = None
             batch_num = 0
@@ -146,6 +158,10 @@ class DQNAgent:
             test_acc = sum(test_rewards == 1) / len(test_rewards)
             print('Episode ' + str(i_episode) + ' Loss: ' + str(loss) + ' Train Accuracy: ' +
                   str(train_acc) + ' Test Accuracy: ' + str(test_acc))
+            if train_acc + test_acc > best_train_acc + best_test_acc:
+                best_train_acc = train_acc
+                best_test_acc = test_acc
+                self.save_model()
 
     def train_step(self):
         idxes = self.sample(self.batch_size)
@@ -213,6 +229,7 @@ class DQNAgent:
         # print(self.model.get_weights())
         # print(self.target_model.get_weights())
         for i in range(np.shape(self.model.layers)[0]):
+            # print(self.model.layers[i].get_weights())
             self.target_model.layers[i].set_weights(self.model.layers[i].get_weights())
 
     def get_target_value(self, state):
@@ -230,3 +247,69 @@ class DQNAgent:
 
         orig = np.dstack((r, g, b))
         return orig
+
+    def compile(self, dqn_para):
+        opt = Adam(learning_rate=dqn_para['lr'])
+        if config.dqn_para['optimizer'] == 'SGD':
+            opt = SGD(learning_rate=dqn_para['lr'], momentum=dqn_para['momentum'])
+        self.model.compile(optimizer=opt, loss='mse')
+
+    def update_action_dim(self):
+        print('---before---')
+        self.model.summary()
+        self.target_model.summary()
+        print('---before---')
+
+        self.action_dim += 1
+        model = Model(self.action_dim)
+        target_model = Model(self.action_dim)
+
+        model.build((None,) + config.dqn_para['img_size'])
+        target_model.build((None,) + config.dqn_para['img_size'])
+
+
+        for i in range(np.shape(self.model.layers)[0] - 1):
+            model.layers[i].set_weights(self.model.layers[i].get_weights())
+            target_model.layers[i].set_weights(self.target_model.layers[i].get_weights())
+
+        print('---after---')
+        model.summary()
+        target_model.summary()
+        print('---after---')
+
+        self.model = model
+        self.target_model = target_model
+
+        # self.model.add_action()
+        # self.target_model.add_action()
+
+        # self.update_transition()
+
+    def save_model(self, p_id=None):
+        if p_id == None:
+            self.model.save_weights('./checkpoints_eval/checkpoint')
+            self.target_model.save_weights('./checkpoints_target/checkpoint')
+        else:
+            self.model.save_weights('./checkpoints_eval/' + str(p_id) + '/checkpoint_')
+            self.target_model.save_weights('./checkpoints_target/' + str(p_id) + '/checkpoint_')
+
+    def load_model(self, p_id=None):
+        if p_id == None:
+            self.model.load_weights('./checkpoints_eval/checkpoint')
+            self.target_model.load_weights('./checkpoints_target/checkpoint')
+        else:
+            self.model.load_weights('./checkpoints_eval/' + str(p_id) + '/checkpoint_')
+            self.target_model.load_weights('./checkpoints_target/' + str(p_id) + '/checkpoint_')
+
+        self.model.build((None,) + config.dqn_para['img_size'])
+        self.target_model.build((None,) + config.dqn_para['img_size'])
+        print('---load---')
+        self.model.summary()
+        self.target_model.summary()
+        print('---load---')
+
+        # for i in range(np.shape(self.model.layers)[0]):
+        #     print(self.model.layers[i].get_weights())
+
+        # except:
+        #     print('Load models failed.')

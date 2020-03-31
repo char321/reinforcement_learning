@@ -312,8 +312,7 @@ class DataLoader:
 
                 for k, v in img_list.items():
                     img_type = k
-                    img_data = self.normalisation(v)
-                    return img_data
+                    img_data = v
                     img = {
                         'p_id': p_id,
                         'i_id': i_id,
@@ -331,14 +330,4 @@ class DataLoader:
     def load_baskets_categories(self):
         # TODO
         return
-
-    def normalisation(self, orig):
-        r, g, b = orig[:, :, 0], orig[:, :, 1], orig[:, :, 2]
-
-        r = 255 * (r - np.min(r)) / (np.max(r) - np.min(r))
-        g = 255 * (g - np.min(g)) / (np.max(g) - np.min(g))
-        b = 255 * (b - np.min(b)) / (np.max(b) - np.min(b))
-
-        orig = np.dstack((r, g, b))
-        return orig
 
