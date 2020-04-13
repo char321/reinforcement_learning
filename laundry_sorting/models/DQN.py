@@ -2,6 +2,7 @@ import gym
 import numpy as np
 import tensorflow as tf
 import json
+import os
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
@@ -14,6 +15,10 @@ config = Config()
 kernel_initializer = config.dqn_para['initializer'][0]
 bias_initializer = config.dqn_para['initializer'][1]
 
+from google.colab import drive
+drive.mount('/content/drive')
+root_path = 'drive/My Drive/pre_trained_test1'
+# root_path = '.'
 
 class Model(keras.Model):
     def __init__(self, a_dim):
@@ -170,7 +175,7 @@ class DQNAgent:
                 model_info['best_test_acc'] = str(best_test_acc)
                 model_info['episode'] = i_episode
                 json_str = json.dumps(model_info)
-                with open('./checkpoints/pre/model_info.json', 'w') as json_file:
+                with open(root_path + '/checkpoints/pre/model_info.json', 'w') as json_file:
                     json_file.write(json_str)
 
     def train_step(self):
@@ -265,10 +270,10 @@ class DQNAgent:
         self.model.compile(optimizer=opt, loss='mse')
 
     def update_action_dim(self):
-        print('---before---')
-        self.model.summary()
-        self.target_model.summary()
-        print('---before---')
+        # print('---before---')
+        # self.model.summary()
+        # self.target_model.summary()
+        # print('---before---')
 
         self.action_dim += 1
         model = Model(self.action_dim)
@@ -282,10 +287,10 @@ class DQNAgent:
             model.layers[i].set_weights(self.model.layers[i].get_weights())
             target_model.layers[i].set_weights(self.target_model.layers[i].get_weights())
 
-        print('---after---')
-        model.summary()
-        target_model.summary()
-        print('---after---')
+        # print('---after---')
+        # model.summary()
+        # target_model.summary()
+        # print('---after---')
 
         self.model = model
         self.target_model = target_model
@@ -297,27 +302,27 @@ class DQNAgent:
 
     def save_model(self, p_id=None):
         if p_id == None:
-            self.model.save_weights('./checkpoints/pre/checkpoints_eval/checkpoint')
-            self.target_model.save_weights('./checkpoints/pre/checkpoints_target/checkpoint')
+            self.model.save_weights(root_path + '/checkpoints/pre/checkpoints_eval/checkpoint')
+            self.target_model.save_weights(root_path + '/checkpoints/pre/checkpoints_target/checkpoint')
         else:
-            self.model.save_weights('./checkpoints/' + str(p_id) + '/checkpoints_eval/checkpoint')
-            self.target_model.save_weights('./checkpoints/' + str(p_id) + '/checkpoints_target/checkpoint')
+            self.model.save_weights(root_path + '/checkpoints/' + str(p_id) + '/checkpoints_eval/checkpoint')
+            self.target_model.save_weights(root_path + '/checkpoints/' + str(p_id) + '/checkpoints_target/checkpoint')
 
     def load_model(self, p_id=None):
         if p_id == None:
-            self.model.load_weights('./checkpoints/pre/checkpoints_eval/checkpoint')
-            self.target_model.load_weights('./checkpoints/pre/checkpoints_target/checkpoint')
+            self.model.load_weights(root_path + '/checkpoints/pre/checkpoints_eval/checkpoint')
+            self.target_model.load_weights(root_path + '/checkpoints/pre/checkpoints_target/checkpoint')
         else:
-            self.model.load_weights('./checkpoints/' + str(p_id) + '/checkpoints_eval/checkpoint')
-            self.target_model.load_weights('./checkpoints/' + str(p_id) + '/checkpoints_target/checkpoint')
+            self.model.load_weights(root_path + '/checkpoints/' + str(p_id) + '/checkpoints_eval/checkpoint')
+            self.target_model.load_weights(root_path + '/checkpoints/' + str(p_id) + '/checkpoints_target/checkpoint')
 
         self.model.build((None,) + config.dqn_para['img_size'])
         self.target_model.build((None,) + config.dqn_para['img_size'])
 
-        print('---load---')
-        self.model.summary()
-        self.target_model.summary()
-        print('---load---')
+        # print('---load---')
+        # self.model.summary()
+        # self.target_model.summary()
+        # print('---load---')
 
         # for i in range(np.shape(self.model.layers)[0]):
         #     print(self.model.layers[i].get_weights())

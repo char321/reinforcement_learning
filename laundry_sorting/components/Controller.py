@@ -21,12 +21,17 @@ import tensorflow as tf
 #       - key: i_id
 #       - value: clothe sorting information including colour, type, basket id, basket category id, basket labe
 
+from google.colab import drive
+drive.mount('/content/drive')
+root_path = 'drive/My Drive/pre_trained_test1'
+# root_path = '.'
+
 class Controller:
     def __init__(self, config):
         self.robot = Robot()
         self.dataloader = DataLoader()
         self.data = self.dataloader.load_all_data()
-        self.baskets = config.baskets
+        self.baskets = config.baskets.copy()
         self.img_dict = config.img_dict
         self.nob = len(self.baskets)  # number of baskets
         self.mob = 6  # max number of baskets
@@ -215,7 +220,7 @@ class Controller:
         plt.close()
 
     def train_with_dqn(self):
-        dqn_para = self.config.dqn_para
+        dqn_para = self.config.dqn_para.copy()
         episode = dqn_para['episode']
 
         # agent = DQNAgent(model, target_model, lr, gamma, epsilon, batch_size, buffer_size, self.baskets, img_size,
@@ -276,7 +281,8 @@ class Controller:
         train, test = train_test_split(all_images, test_size=0.3)
         print(np.shape(train))
 
-        dqn_para = self.config.apply_dqn_para
+        dqn_para = self.config.apply_dqn_para.copy()
+        self.baskets = self.config.baskets.copy()
         agent = DQNAgent(dqn_para, self.baskets)
         agent.load_model()
 
@@ -285,7 +291,7 @@ class Controller:
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(dqn_para)
 
-        print('Start apply...')
+        print('Start apply...' + str(p_id))
         best_train_acc = 0
         best_test_acc = 0
 
@@ -356,14 +362,14 @@ class Controller:
                 best_test_acc = test_acc
                 agent.save_model(p_id)
 
-                model_info = dqn_para
+                model_info = dqn_para.copy()
                 model_info['baskets'] = str(self.baskets)
                 model_info['best_train_acc'] = str(best_train_acc)
                 model_info['best_test_acc'] = str(best_test_acc)
                 model_info['episode'] = i_episode
-                for s in model_info.keys():
-                    print(s)
-                    print(type(s))
+                # for s in model_info.keys():
+                #     print(s)
+                #     print(type(s))
                 json_str = json.dumps(model_info)
-                with open('./checkpoints/' + str(p_id) + '/model_info.json', 'w') as json_file:
+                with open(root_path + '/checkpoints/' + str(p_id) + '/model_info.json', 'w') as json_file:
                     json_file.write(json_str)
