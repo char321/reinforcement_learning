@@ -1,16 +1,13 @@
 ,0,1
-0,whites-lights,5
-1,darks-colours,2
-2,darks-denims,2
-3,lights-delicates,2
-4,darks-children's,1
-5,lights-children's,1
-6,darks-mixed,1
-7,denims-children's,1
-8,handwash-delicates,1
-9,whites-delicates,1
-10,lights-mixed,1
-11,colours-mixed,1
-12,handwash-denims,1
-13,whites-handwash,1
-14,darks-miscellaneous,1
+0,darks & colours,20
+1,whites & lights,19
+2,darks & miscellaneous,13
+3,darks & mixed,11
+4,colours & mixed,10
+5,lights & delicates,7
+6,darks & denims,5
+7,whites & delicates,5
+8,whites & handwash,4
+9,lights & mixed,2
+10,handwash & denims,2
+11,handwash & delicates,1

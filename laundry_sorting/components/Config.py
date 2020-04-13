@@ -52,32 +52,57 @@ class Config:
 
         # parameter for DQN
         self.dqn_para = {
-            'episode': 300,
+            'episode': 50,
+            'state_dim': [None, 400, 300, 3],
+            'img_size': (400, 300, 3),
+            'action_dim': 3,
+            'lr': 0.000001,
+            'gamma': 0,
+            'epsilon': 0.1,
+            'batch_size': 32,
+            'buffer_size': 500,
+            'update_iter': 200,
+            'start_learning': 50,
+            'initializer': ['random_uniform', 'zeros'],
+            'optimizer': 'SGD',
+            'momentum': 0.9
+        }
+
+        self.apply_dqn_para = {
+            'episode': 100,
             'state_dim': [None, 400, 300, 3],
             'img_size': (400, 300, 3),
             'action_dim': 3,
             'lr': 0.00001,
-            'gamma': 0,
+            'gamma': 0.9,
             'epsilon': 0.1,
-            'batch_size': 8,
-            'buffer_size': 32,
-            'update_iter': 8,
-            'start_learning': 16
+            'batch_size': 16,
+            'buffer_size': 100,
+            'update_iter': 50,
+            'start_learning': 32,
+            'initializer': ['random_uniform', 'zeros'],
+            'optimizer': 'SGD',
+            'momentum': 0.9
         }
 
-        self.dqn_para = {
-            'episode': 5,
-            'state_dim': [None, 400, 300, 3],
-            'img_size': (400, 300, 3),
-            'action_dim': 3,
-            'lr': 0.01,
-            'gamma': 0,
-            'epsilon': 0.1,
-            'batch_size': 1,
-            'buffer_size': 3,
-            'update_iter': 1,
-            'start_learning': 1
-        }
+        # self.dqn_para = {
+        #     'episode': 20,
+        #     'state_dim': [None, 400, 300, 3],
+        #     'img_size': (400, 300, 3),
+        #     'action_dim': 3,
+        #     'lr': 0.01,
+        #     'gamma': 0,
+        #     'epsilon': 0.1,
+        #     'batch_size': 1,
+        #     'buffer_size': 3,
+        #     'update_iter': 5,
+        #     'start_learning': 5,
+        #     'initializer': ['random_uniform', 'zeros'],
+        #     'optimizer': 'SGD',
+        #     'momentum': 0.9
+        # }
+        #
+        # self.apply_dqn_para = self.dqn_para
 
         # Model
         self.model = self.model_list[2]

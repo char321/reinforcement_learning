@@ -21,12 +21,17 @@ import tensorflow as tf
 #       - key: i_id
 #       - value: clothe sorting information including colour, type, basket id, basket category id, basket labe
 
+from google.colab import drive
+drive.mount('/content/drive')
+root_path = 'drive/My Drive/pre_trained_test1'
+# root_path = '.'
+
 class Controller:
     def __init__(self, config):
         self.robot = Robot()
         self.dataloader = DataLoader()
         self.data = self.dataloader.load_all_data()
-        self.baskets = config.baskets
+        self.baskets = config.baskets.copy()
         self.img_dict = config.img_dict
         self.nob = len(self.baskets)  # number of baskets
         self.mob = 6  # max number of baskets
@@ -35,6 +40,7 @@ class Controller:
         self.set_model()
         self.user = None
         self.default_policy = None
+        np.random.seed(100)
 
     def set_model(self):
         if self.config.model == 'QLearning':
@@ -214,7 +220,7 @@ class Controller:
         plt.close()
 
     def train_with_dqn(self):
-        dqn_para = self.config.dqn_para
+        dqn_para = self.config.dqn_para.copy()
         episode = dqn_para['episode']
 
         # agent = DQNAgent(model, target_model, lr, gamma, epsilon, batch_size, buffer_size, self.baskets, img_size,
@@ -222,29 +228,148 @@ class Controller:
 
         agent = DQNAgent(dqn_para, self.baskets)
 
-        self.images_data = self.dataloader.image_aug()
+        self.images_data = self.dataloader.image_aug(isCommon=True)
 
         # print(len(self.images_data))
 
         all_images = []
         for p_id in range(1, 31):
             images = self.images_data[p_id]
-            # print(len(images))
+            np.random.shuffle(images)
             all_images.extend(images)
 
-        train, all_images = train_test_split(all_images, test_size=0.002)
+        np.random.shuffle(all_images)
+
+        # train, all_images = train_test_split(all_images, test_size=0.002)
         train, test = train_test_split(all_images, test_size=0.3)
-        # print(np.shape(train))
-        agent.evalation(test)
-        print('start train')
+        print(np.shape(train))
+        agent.evaluation(test)
+
+        print('Parameters')
+        import pprint
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(dqn_para)
+
+        print('Start train...')
         agent.train(train, test, episode)
 
-        # agent.model.save_weights('./')
+        # agent.model.save_weights('./checkpoints/my_checkpoint')
+        # # agent.model.save('my_model.h5')
+        #
+        # newmodel = Model(3)
+        # newmodel.load_weights('./checkpoints/my_checkpoint')
+        #
+        # neweagent = DQNAgent(dqn_para, self.baskets)
+        # neweagent.model = newmodel
+        # neweagent.target_model = newmodel
+        #
+        # print(agent.evaluation(train))
+        # print(neweagent.evaluation(train))
+        # print(agent.evaluation(test))
+        # print(neweagent.evaluation(test))
 
-        # TODO
-        # save & reload
-        # updadte network & save & reload
+    def apply_with_dqn(self, p_id):
+        self.set_user(p_id)
+        self.images_data = self.dataloader.imgaug_data if self.dataloader.imgaug_data else self.dataloader.image_aug()
+        all_images = []
+        images = self.images_data[p_id]
+        np.random.shuffle(images)
+        all_images.extend(images)
+        np.random.shuffle(all_images)
 
-    def temp(self):
-        model = Model(3)
-        model.load_weights('./checkpoint')
+        # train, all_images = train_test_split(all_images, test_size=0.05)
+        train, test = train_test_split(all_images, test_size=0.3)
+        print(np.shape(train))
+
+        dqn_para = self.config.apply_dqn_para.copy()
+        self.baskets = self.config.baskets.copy()
+        agent = DQNAgent(dqn_para, self.baskets)
+        agent.load_model()
+
+        print('Parameters')
+        import pprint
+        pp = pprint.PrettyPrinter(indent=4)
+        pp.pprint(dqn_para)
+
+        print('Start apply...' + str(p_id))
+        best_train_acc = 0
+        best_test_acc = 0
+
+        if_max = False
+        for i_episode in range(1, dqn_para['episode'] + 1):
+            loss = None
+            batch_num = 0
+            for i, img in enumerate(train):
+                state = img['data']
+                state = tf.cast(state, tf.float32)
+                state = agent.normalisation(state)  # Normalisation
+                best_action, q_values = agent.model.action_value(state[None])
+                action = agent.get_action(best_action)  # get the real action
+
+                next_state = train[(i + 1) % len(train)]['data']
+                next_state = agent.normalisation(next_state)  # Normalisation
+                basket_key = list(agent.baskets.keys())[action]
+                correct_label = img['label']
+                reward = 1 if basket_key in correct_label else -1
+                done = None
+
+                if reward == -1:
+                    # simulate to ask label from user
+                    asked_label = self.ask_for_label_with_img(img)
+                    if asked_label == 0:
+                        continue
+
+                    if asked_label not in self.baskets:
+
+                        if self.nob >= self.mob and not if_max:
+                            print('Already achieve maximum number of baskets!')
+                            if_max = True
+                        else:
+                            print('Add basket ' + str(asked_label))
+                            self.baskets = self.robot.add_new_label(asked_label, self.baskets)
+                            self.nob += 1
+
+                            agent.update_action_dim()
+                            agent.update_target_model()
+                            agent.compile(dqn_para)
+
+                            # # for j in range(np.shape(agent.model.layers)[0]):
+                            # print(agent.model.layers[1].get_weights())
+                            agent.baskets = self.baskets
+                            print(agent.baskets)
+
+                agent.store_transition(state, action, reward, next_state, done)
+                agent.num_in_buffer = min(agent.num_in_buffer + 1, agent.buffer_size)
+
+                if i > agent.start_learning:  # start learning
+                    losses = agent.train_step()
+                    loss = losses if not loss else min(loss, losses)
+                    # print('Batch ' + str(batch_num) + 'Loss: ' + str(losses))
+                    batch_num += 1
+                if i % agent.target_update_iter == 0:
+                    agent.update_target_model()
+
+                # state = None if done else next_state
+
+            train_rewards = agent.evaluation(train)
+            train_acc = sum(train_rewards == 1) / len(train_rewards)
+            test_rewards = agent.evaluation(test)
+            test_acc = sum(test_rewards == 1) / len(test_rewards)
+            print('Episode ' + str(i_episode) + ' Loss: ' + str(loss) + ' Train Accuracy: ' +
+                  str(train_acc) + ' Test Accuracy: ' + str(test_acc))
+            if train_acc + test_acc > best_train_acc + best_test_acc:
+                best_train_acc = train_acc
+                best_test_acc = test_acc
+                agent.save_model(p_id)
+
+                model_info = dqn_para.copy()
+                model_info['baskets'] = str(self.baskets)
+                model_info['best_train_acc'] = str(best_train_acc)
+                model_info['best_test_acc'] = str(best_test_acc)
+                model_info['episode'] = i_episode
+                # for s in model_info.keys():
+                #     print(s)
+                #     print(type(s))
+                json_str = json.dumps(model_info)
+                with open(root_path + '/checkpoints/' + str(p_id) + '/model_info.json', 'w') as json_file:
+                    json_file.write(json_str)

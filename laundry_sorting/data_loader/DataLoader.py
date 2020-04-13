@@ -250,7 +250,7 @@ class DataLoader:
         return persons_images
 
     # load images and do the image augmentation to generate more data
-    def image_aug(self):
+    def image_aug(self, isCommon=False):
         aug_images = {}
         p_ids = set(self.sorts['p_id'])
         n = {}
@@ -261,6 +261,8 @@ class DataLoader:
             images = []
 
             for i_id in i_ids:
+                if isCommon and i_id > 16:
+                    break
                 image_path = self.base_path + '/new_images/img' + str(i_id) + '.jpg'
                 orig = cv2.imread(image_path)
 
@@ -328,3 +330,4 @@ class DataLoader:
     def load_baskets_categories(self):
         # TODO
         return
+
