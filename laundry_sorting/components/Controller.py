@@ -3,11 +3,13 @@ import numpy as np
 import os
 import json
 import matplotlib.pyplot as plt
+import random
 from data_loader.DataLoader import DataLoader
 from models.TDModel import QLearningModel
 from models.TDModel import SarsaModel
 from models.DQN import Model
 from models.DQN import DQNAgent
+from models.A2C import A2CAgent
 from components.User import User
 from components.Robot import Robot
 from sklearn.model_selection import train_test_split
@@ -21,10 +23,12 @@ import tensorflow as tf
 #       - key: i_id
 #       - value: clothe sorting information including colour, type, basket id, basket category id, basket labe
 
-from google.colab import drive
-drive.mount('/content/drive')
-root_path = 'drive/My Drive/pre_trained_test1'
+# from google.colab import drive
+# drive.mount('/content/drive')
+# root_path = 'drive/My Drive/pre_trained_test1'
 # root_path = '.'
+
+random.seed(3)
 
 class Controller:
     def __init__(self, config):
@@ -109,7 +113,11 @@ class Controller:
         # print(q_table)
 
         clothes = self.data[p_id]
+        train_results = {}
+        test_results = {}
         results = {}
+        random.seed(p_id)
+        train = random.sample(clothes.keys(), int(len(clothes) * 0.7))
         for i_id in clothes.keys():
             cloth = clothes[i_id]
             correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
@@ -118,12 +126,17 @@ class Controller:
             # print(label)
             # print(correct_label)
             result = 1 if label in correct_label else 0
+            if i_id in train:
+                train_results[i_id] = result
+            else:
+                test_results[i_id] = result
+
             results[i_id] = result
+        print("Person %s" % str(p_id))
+        print(train_results)
+        print(test_results)
 
-        # print("Person %s" % str(p_id))
-        # print(results)
-
-        return results
+        return [train_results, test_results]
 
     def test_all(self):
         total_accuracy = 0
@@ -136,11 +149,18 @@ class Controller:
         self.model.set_parameters(self.config.update_alpha, self.config.update_gamma, self.config.update_epsilon)
         # print('Applying...')
 
-        acc = []
+        train_acc = []
+        test_acc = []
         xs = []
         count = 1
         clothes = self.data[p_id]
+        random.seed(p_id)
+        train = random.sample(clothes.keys(), int(len(clothes) * 0.7))
         for i_id in clothes:
+            if i_id not in train:
+                print(i_id)
+                # pass
+                continue
             cloth = clothes[i_id]
             q_table = self.model.get_q_table()
             # System make decision
@@ -189,25 +209,36 @@ class Controller:
             #     print(self.get_q_table()[state])
 
             # TODO
-            # test_result = self.test_person(p_id)
-            result = self.test_person(p_id)
-            acc.append(sum(result.values()) / len(result))
+            [train_result, test_result] = self.test_person(p_id)
+            print('WDNMD')
+            train_acc.append(sum(train_result.values()) / len(train_result))
+            test_acc.append(sum(test_result.values()) / len(test_result))
             xs.append(count)
             count += 1
 
-        title = 'Updated ' + str(p_id) + ' using ' + self.config.model + ' with\n' + 'alpha: ' + str(
-            self.config.update_alpha) + ' gamma: ' + str(
-            self.config.update_gamma) + ' epsilon: ' + str(self.config.update_epsilon)
-        name = 'Updated_' + str(p_id) + '_' + self.config.model + '_alpha' + str(
-            self.config.update_alpha) + '_gamma' + str(
-            self.config.update_gamma) + '_epsilon' + str(self.config.update_epsilon)
+        title = self.config.model + ' on Person ' + str(p_id)
+        name = self.config.model + '-' + str(p_id)
 
         # plot
-        # self.plot_image(acc, xs, len(clothes), title, name)
+        # self.plot_image2(train_acc, test_acc, xs, int(len(clothes) * 0.7), title, name)
 
         # print(self.baskets)
         # print(self.get_q_table()[0])
         # print(q_table)
+
+    def plot_image2(self, ys_train, ys_test, xs, x_axis, title, name):
+        plt.figure()
+        plt.axis([1, x_axis, 0, 1])
+        plt.plot(xs, ys_train)
+        plt.plot(xs, ys_test)
+        plt.legend(('Train', 'Test'))
+        plt.xticks(range(1, x_axis, int(x_axis / 10)))
+        plt.yticks(np.arange(0, 1.2, 0.1))
+        plt.xlabel('Iteration Time')
+        plt.ylabel('Accuracy')
+        plt.title(title)
+        plt.savefig(self.path + name + '.png')
+        plt.close()
 
     def plot_image(self, ys, xs, x_axis, title, name):
         plt.figure()
@@ -229,8 +260,6 @@ class Controller:
         agent = DQNAgent(dqn_para, self.baskets)
 
         self.images_data = self.dataloader.image_aug(isCommon=True)
-
-        # print(len(self.images_data))
 
         all_images = []
         for p_id in range(1, 31):
@@ -273,6 +302,7 @@ class Controller:
         self.images_data = self.dataloader.imgaug_data if self.dataloader.imgaug_data else self.dataloader.image_aug()
         all_images = []
         images = self.images_data[p_id]
+        random.seed(p_id)
         np.random.shuffle(images)
         all_images.extend(images)
         np.random.shuffle(all_images)
@@ -296,6 +326,7 @@ class Controller:
         best_test_acc = 0
 
         if_max = False
+        previous_correct, previous_wrong = 0, 0
         for i_episode in range(1, dqn_para['episode'] + 1):
             loss = None
             batch_num = 0
@@ -338,6 +369,34 @@ class Controller:
                             agent.baskets = self.baskets
                             print(agent.baskets)
 
+                if previous_correct == 0 and previous_wrong == 0:
+                    if reward == 1:
+                        previous_correct += 1
+                    else:
+                        previous_wrong += 1
+                elif previous_correct > 0 and previous_wrong == 0:
+                    if reward == 1:
+                        previous_correct = previous_correct + 1 if previous_correct <= 6 else previous_correct
+                    else:
+                        previous_correct = 0
+                        previous_wrong += 1
+                elif previous_correct == 0 and previous_wrong > 0:
+                    if reward == 1:
+                        previous_correct += 1
+                        previous_wrong = 0
+                    else:
+                        previous_wrong = previous_wrong + 1 if previous_wrong <= 6 else previous_wrong
+
+                if reward == 1:
+                    if previous_correct > 3 and previous_correct <= 5:
+                        reward = 3
+                    if previous_correct > 5 and previous_correct <= 6:
+                        reward = 5
+                else:
+                    if previous_wrong > 3 and previous_wrong <= 5:
+                        reward = -3
+                    if previous_wrong > 5 and previous_wrong <= 6:
+                        reward = -5
                 agent.store_transition(state, action, reward, next_state, done)
                 agent.num_in_buffer = min(agent.num_in_buffer + 1, agent.buffer_size)
 
@@ -373,3 +432,34 @@ class Controller:
                 json_str = json.dumps(model_info)
                 with open(root_path + '/checkpoints/' + str(p_id) + '/model_info.json', 'w') as json_file:
                     json_file.write(json_str)
+
+    def train_with_a2c(self):
+
+        dqn_para = self.config.dqn_para.copy()
+        episode = dqn_para['episode']
+
+        # agent = DQNAgent(model, target_model, lr, gamma, epsilon, batch_size, buffer_size, self.baskets, img_size,
+        #                  target_update_iter, start_learning)
+
+        agent = A2CAgent(dqn_para, self.baskets)
+
+        self.images_data = self.dataloader.image_aug(isCommon=True)
+
+        all_images = []
+        for p_id in range(1, 31):
+            images = self.images_data[p_id]
+            np.random.shuffle(images)
+            all_images.extend(images)
+
+        np.random.shuffle(all_images)
+
+        train, all_images = train_test_split(all_images, test_size=0.02)
+        train, test = train_test_split(all_images, test_size=0.15)
+        print(np.shape(train))
+
+        rewards_history = agent.train(train, test, 100)
+
+        print(rewards_history)
+
+        results = agent.test(test)
+        print(results)

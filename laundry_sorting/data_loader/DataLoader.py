@@ -35,14 +35,20 @@ class DataLoader:
 
     def get_colours(self):
         # simple
-        # return ['white', 'black', 'dark', 'colours']
+        return ['white', 'black', 'dark', 'colours']
 
         # full
         return ['white', 'black', 'dark', 'light', 'bright', 'colours']
 
     def get_types(self):
         # simple
-        # return ['t-shirt', 'socks', 'polo', 'pants', 'jeans', 'shirt', 'skirt', 'others']
+        # ['t-shirt', 'sport', 'top', 'socks', 'polo', 'pants','shorts', 'skirt', 'hat', 'baby', 'others']
+        # ['t-shirt', 'top', 'sport', 'socks', 'pants', 'shorts', 'skirt',
+         # 'hat', 'baby', 'others']
+        # return ['t-shirt', 'top', 'sport', 'socks', 'pants', 'shorts', 'skirt',
+                # 'baby', 'others']
+        return ['t-shirt', 'top', 'sport', 'socks', 'pants', 'jeans', 'shorts', 'skirt',
+                'baby', 'others']
 
         # full
         return ['t-shirt', 'sport', 'top', 'socks', 'polo', 'pants', 'jeans', 'shorts', 'shirt', 'skirt', 'pyjama',
@@ -68,20 +74,32 @@ class DataLoader:
         if self.isnumber(i_type):
             return 'others'
 
-        if 't-shirt' in i_type:
+        if 't-shirt' in i_type or 'tee' in i_type:
             return 't-shirt'
-        elif 'socks' in i_type:
+        elif 'sport' in i_type or 'swimming' in i_type or 'running' in i_type or 'gym' in i_type or 'football' in i_type or 'fitness' in i_type or 'rugby' in i_type or 'athletic' in i_type or 'boxers' in i_type or 'legging' in i_type:
+            return 'sport'
+        elif 'vest' in i_type or 'hoodie' in i_type or 'long_sleeve' in i_type or 'sweater' in i_type or 'neck' in i_type or 'top' in i_type or 'jumper' in i_type or 'base layer' in i_type:
+            return 'top'
+        elif 'socks' in i_type or 'sock' in i_type:
             return 'socks'
         elif 'polo' in i_type:
-            return 'polo'
-        elif 'pants' in i_type or 'jogger' in i_type:
+            return 'top'
+        elif 'pants' in i_type or 'pant' in i_type or 'jogger' in i_type or 'bottoms' in i_type or 'trousers' in i_type:
             return 'pants'
         elif 'jeans' in i_type:
             return 'jeans'
+        elif 'shorts' in i_type:
+            return 'shorts'
         elif 'shirt' in i_type or 'blouse' in i_type:
-            return 'shirt'
-        elif 'skirt' in i_type:
+            return 'top'
+        elif 'skirt' in i_type or 'dress' in i_type:
             return 'skirt'
+        elif 'pyjama' in i_type:
+            return 'others'
+        elif 'beanie' in i_type or 'hat' in i_type or 'balaclava' in i_type or 'headband' in i_type:
+            return 'others'
+        elif 'baby' in i_type:
+            return 'baby'
         else:
             return 'others'
 
@@ -89,6 +107,8 @@ class DataLoader:
     def map_to_colour_full(self, i_colour):
         if self.isnumber(i_colour):
             return 'colours'
+
+        return self.map_to_colour_simple(i_colour)
 
         # TODO - grey
         if 'white' in i_colour:
@@ -100,7 +120,7 @@ class DataLoader:
         elif 'light' in i_colour:
             return 'light'
         elif 'bright' in i_colour:
-            return 'bright'
+            return 'light'
         else:
             return 'colours'
 
@@ -108,6 +128,8 @@ class DataLoader:
     def map_to_type_full(self, i_type):
         if self.isnumber(i_type):
             return 'others'
+
+        return self.map_to_type_simple(i_type)
 
         if 't-shirt' in i_type or 'tee' in i_type:
             return 't-shirt'
@@ -181,7 +203,7 @@ class DataLoader:
                 b_id = temp_sorts['b_id'][temp_sorts['i_id'] == i_id].values[0]
 
                 i_colour = self.map_to_colour_full(sort['s_colour_description'].values[0])
-                i_type = self.map_to_type_simple(sort['s_label'].values[0])
+                i_type = self.map_to_type_full(sort['s_label'].values[0])
 
                 basket = self.baskets[self.baskets['b_id'] == int(b_id)]
                 bc_id_1 = basket['bc_id_1'].values[0]
@@ -256,11 +278,15 @@ class DataLoader:
         n = {}
 
         for p_id in p_ids:
+            if p_id > 1:
+                return
             temp_sorts = self.sorts[self.sorts['p_id'] == p_id]
             i_ids = temp_sorts['i_id']
             images = []
 
             for i_id in i_ids:
+                if i_id > 1:
+                    return
                 if isCommon and i_id > 16:
                     break
                 image_path = self.base_path + '/new_images/img' + str(i_id) + '.jpg'
@@ -306,6 +332,7 @@ class DataLoader:
                     'com3': seq3.augment_image(orig)
                 }
 
+                print(p_id)
                 clothes = self.cloth_data[p_id]
                 cloth = clothes[i_id]
                 correct_label = [cloth['bc_id_1'], cloth['bc_id_2']]
@@ -321,6 +348,11 @@ class DataLoader:
                         'label': correct_label
                     }
                     images.append(img)
+
+                    image_path = self.base_path + '/test_images/img' + str(k) + '.jpg'
+
+                    cv2.imwrite(image_path, v)
+                    print(v)
 
             aug_images[p_id] = images
             # n[p_id] = temp
