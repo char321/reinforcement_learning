@@ -15,9 +15,9 @@ config = Config()
 kernel_initializer = config.dqn_para['initializer'][0]
 bias_initializer = config.dqn_para['initializer'][1]
 
-from google.colab import drive
-drive.mount('/content/drive')
-root_path = 'drive/My Drive/pre_trained_test1'
+# from google.colab import drive
+# drive.mount('/content/drive')
+# root_path = 'drive/My Drive/pre_trained_test1'
 # root_path = '.'
 
 class Model(keras.Model):
@@ -124,10 +124,13 @@ class DQNAgent:
         # TODO
         pass
 
-    def train(self, train, test, episode, is_apply=False):
+    def train(self, train, test, episode):
         # initialize the initial observation of the agent
         best_train_acc = 0
         best_test_acc = 0
+
+        previous_correct = 0
+        previous_wrong = 0
         for i_episode in range(1, episode + 1):
             loss = None
             batch_num = 0

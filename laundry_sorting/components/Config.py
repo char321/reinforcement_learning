@@ -22,11 +22,11 @@ class Config:
         self.nop_list = [50]
         self.reward_scale_list = [1]
         self.train_alpha_list = [0.05]  # [0.05, 0.1, 0.3, 0.5, 0.7]
-        self.update_alpha_list = [0.05, 0.1, 0.3, 0.5, 0.7]
-        self.gamma_list = [0]  # [0, 0.3, 0.5, 0.7]
+        self.update_alpha_list = [0.1]
+        self.gamma_list = [0, 0.3, 0.5, 0.7, 0.9, 0.99]  # [0, 0.3, 0.5, 0.7]
         self.epsilon_list = [0.1]  # [0.1, 0.2]
-        self.correct_scale_list = [1, 2, 3, 5]  # [1, 2, 3, 5, 10]
-        self.incorrect_scale_list = [0.5, 1, 2]  # [0.5, 1, 2, 3]
+        self.correct_scale_list = [5]  # [1, 2, 3, 5, 10]
+        self.incorrect_scale_list = [1]  # [0.5, 1, 2, 3]
 
         # basic parameter
         self.baskets = {
@@ -69,17 +69,17 @@ class Config:
         }
 
         self.apply_dqn_para = {
-            'episode': 100,
+            'episode': 50,
             'state_dim': [None, 400, 300, 3],
             'img_size': (400, 300, 3),
             'action_dim': 3,
             'lr': 0.00001,
-            'gamma': 0.9,
+            'gamma': 0,
             'epsilon': 0.1,
-            'batch_size': 16,
+            'batch_size': 8,
             'buffer_size': 100,
             'update_iter': 50,
-            'start_learning': 32,
+            'start_learning': 16,
             'initializer': ['random_uniform', 'zeros'],
             'optimizer': 'SGD',
             'momentum': 0.9
