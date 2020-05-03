@@ -13,10 +13,14 @@ tensorflow             2.1.0
 - Config.py contains all the parameters for Q-Learning, SARSA, and DQN
 - Environment setting on Google Colab
 ```python
+# Environment Setting
 !pip install git+https://github.com/aleju/imgaug.git
 %tensorflow_version 2.x
 !pip install tensorflow-gpu 
 !pip install tf-nightly
+
+# Training
+!python3 LaundrySortingTrain/laundry_sorting/main.py
 ```
 
 
